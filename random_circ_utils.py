@@ -64,10 +64,9 @@ def checkerboard2square(circ):
         mode = 'fwd' if i % 2 == 0 else 'rev'
         mpo_block = list(map(lambda x: _blocks_conv(x, mode=mode), zip(down_block, up_block)))
         last_mpo = mpo_block[0][..., 0][..., jnp.newaxis]
-        mpo_block = mpo_block[::-1] + [last_mpo]
+        mpo_block = mpo_block[:0:-1] + [last_mpo]
         mpo_blocks.append(mpo_block)
-    last_down_mps = down_mps[0][..., 0][..., jnp.newaxis]
-    down_mps = list(down_mps[::-1]) + [last_down_mps]
+    down_mps = list(down_mps[::-1])
     last_up_mps = up_mps[0][..., 0][..., jnp.newaxis]
-    up_mps = list(up_mps[::-1]) + [last_up_mps]
+    up_mps = list(up_mps[:0:-1]) + [last_up_mps]
     return [down_mps] + mpo_blocks + [up_mps]
