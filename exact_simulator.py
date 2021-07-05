@@ -51,13 +51,18 @@ class ExactFloquet:
     def simulate(self,
                  in_state,
                  layer,
-                 time_steps):
+                 time_steps,
+                 use_control=False,
+                 cntrl_seq=None):
         """Simulate dynamics of a qubit system.
 
         Args:
             in_state: array like of shape self.n * (2,)
             layer: list of arrays of shape (4, 4)
             time_steps: int, number of time steps
+            use_control: boolean flag showing if to use control seq. or not
+            cntrl_seq: None or list of array like of shape (2, 2),
+                control seq.
 
         Returns:
             array like of shape (time_steps, self.n, 3),
@@ -72,9 +77,11 @@ class ExactFloquet:
         in_state = in_state.reshape(self.n * (2,))
         rho_layer = [_apply_sigma(in_state, side) for side in range(self.n)]
         rho_layers.append(rho_layer)
-        for _ in range(time_steps):
+        for i in range(time_steps):
             to_reduce = [in_state] + list(zip(first_layer_sides, first_layer)) + list(zip(second_layer_sides, second_layer))
             in_state = reduce(apply_layer, to_reduce)
+            if use_control:
+                in_state = jnp.tensordot(cntrl_seq[i], in_state, [[0], [1]])
             rho_layer = [_apply_sigma(in_state, side) for side in range(self.n)]
             rho_layers.append(rho_layer)
         return jnp.array(rho_layers)
