@@ -81,7 +81,7 @@ class ExactFloquet:
             to_reduce = [in_state] + list(zip(first_layer_sides, first_layer)) + list(zip(second_layer_sides, second_layer))
             in_state = reduce(apply_layer, to_reduce)
             if use_control:
-                in_state = jnp.tensordot(in_state, cntrl_seq[i], axes=1)
+                in_state = jnp.tensordot(cntrl_seq[i], in_state, axes=1)
             rho_layer = [_apply_sigma(in_state, side) for side in range(self.n)]
             rho_layers.append(rho_layer)
         return jnp.array(rho_layers)
