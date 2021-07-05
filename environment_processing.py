@@ -195,13 +195,18 @@ class Environment:
 
     def dynamics(self,
                  transition_matrices,
-                 in_state):
+                 in_state,
+                 use_control=False,
+                 cntrl_seq=None):
         """Calculates dynamics of the subsystem.
 
         Args:
             transition_matrices: list of array like of shape
                 (env_dim * sys_dim, env_dim * sys_dim)
             in_state: array like of shape (sys_dim,)
+            use_control: boolean flag showing if to use control seq. or not
+            cntrl_seq: None or list of array like of shape (2, 2),
+                control seq.
 
         Returns:
             list of array like of shape (sys_dim, sys_dim),
@@ -213,9 +218,13 @@ class Environment:
         sys_rho = sys_rho.sum(0)
         sys_rhos.append(sys_rho)
 
-        for transition_matrix in transition_matrices[::-1]:
+        for i, transition_matrix in enumerate(transition_matrices[::-1]):
             in_state = jnp.tensordot(transition_matrix, in_state, axes=1)
             in_state = in_state / jnp.linalg.norm(in_state)
+            if use_control:
+                in_state = in_state.reshape((-1, 2))
+                in_state = jnp.tensordot(in_state, cntrl_seq[i], axes=[[1], [1]])
+                in_state = in_state.reshape((-1,))
             sys_rho = in_state.reshape((-1, 2))
             sys_rho = sys_rho[..., jnp.newaxis] * sys_rho[:, jnp.newaxis].conj()
             sys_rho = sys_rho.sum(0)
