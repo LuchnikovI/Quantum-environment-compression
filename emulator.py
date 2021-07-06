@@ -51,20 +51,19 @@ class  Floquet_dynamics:
         self.layers = self._gen_layer()
 
 
-    def init_state(self, system_state=None, evironment_state=None):
+    def init_state(self, sys_state=None, env_state=None):
         """ Initialize spin chain environment in all-up state """
 
-        if system_state == None:
-            system_state = jnp.array([1., 0.], jnp.complex64)
+        if sys_state == None:
+            sys_state = jnp.array([1., 0.], jnp.complex64)
         else:
             pass
-        if evironment_state == None:
-            eviroment_state = jnp.eye(1, 2**self.env_size,
-                                      dtype=jnp.complex64)
+        if env_state == None:
+            env_state = jnp.eye(1, 2**self.env_size, dtype=jnp.complex64)
         else:
             pass
         self.initial_state = jnp.tensordot(
-                    system_state, #system state
+                    sys_state, #system state
                     env_state, #environment state
                     axes=0).reshape((self.env_size + 1) * (2, ))
 
