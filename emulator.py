@@ -90,7 +90,7 @@ class  Floquet_dynamics:
                          -1j * self.tau * oper) for oper in operator_layer])
                          # matrix exponential 
         self.layer = jnp.transpose(operator_layer.reshape(
-                     self.number_of_sites, 2, 2, 2, 2), (0, 2, 1, 4, 3))
+                     self.env_size, 2, 2, 2, 2), (0, 2, 1, 4, 3))
                      # transpose after reshape
 
     @staticmethod
