@@ -65,7 +65,7 @@ class  Floquet_dynamics:
             pass
         self.initial_state = jnp.tensordot(
                     system_state, #system state
-                    env_state #environment state
+                    env_state, #environment state
                     axes=0).reshape((self.env_size + 1) * (2, ))
 
 
