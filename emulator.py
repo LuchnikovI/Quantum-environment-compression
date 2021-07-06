@@ -58,10 +58,14 @@ class  Floquet_dynamics:
             system_state = jnp.array([1., 0.], jnp.complex64)
         else:
             pass
+        if evironment_state == None:
+            eviroment_state = jnp.eye(1, 2**self.env_size,
+                                      dtype=jnp.complex64)
+        else:
+            pass
         self.initial_state = jnp.tensordot(
-                    jnp.eye(1, 2**self.env_size,
-                    dtype=jnp.complex64).reshape(-1)[::-1], #environment state
                     system_state, #system state
+                    env_state #environment state
                     axes=0).reshape((self.env_size + 1) * (2, ))
 
 
