@@ -68,18 +68,6 @@ class  Floquet_dynamics:
                     axes=0).reshape((self.env_size + 1) * (2, ))
 
 
-    @staticmethod
-    def _tensor2matrix(input_obj, out_shape):
-        """ Transforms tensor into matrix """
-        return jnp.transpose(input_obj, (0, 2, 1, 3)).reshape(out_shape)
-
-
-    @staticmethod
-    def _matrix2tensor(input_obj, out_shape):
-        """ Transforms matrix inot tensor """
-        return jnp.transpose(input_obj.reshape(out_shape), (1, 0, 3, 2))
-
-
     def _gen_layer(self):
         """ Generate MPO layer """
 
@@ -89,12 +77,10 @@ class  Floquet_dynamics:
                         self.pauli_id, axes=((1), (0))) +\
                         jnp.tensordot(self.local_fields[1:, :]/2,
                         self.id_pauli, axes=((1), (0)))
-        operator_layer = jnp.array([expm(
-                         -1j * self.tau * oper) for oper in operator_layer])
-                         # matrix exponential 
-        self.layer = jnp.transpose(operator_layer.reshape(
-                     self.env_size, 2, 2, 2, 2), (0, 2, 1, 4, 3))
-                     # transpose after reshape
+        operator_layer = jnp.array(list(map(lambda operator: expm(
+                         -1j * self.tau * operator),
+                         operator_layer))) # matrix exponential 
+        self.layer = operator_layer.reshape(self.env_size, 2, 2, 2, 2)
 
     @staticmethod
     def _apply_gate(state, argument, size):
