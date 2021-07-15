@@ -1,4 +1,5 @@
 from jax import numpy as jnp
+from jax.scipy.special import xlogy
 from functools import reduce
 
 
@@ -59,13 +60,10 @@ def _mutual_inf(state):
     rho1 = jnp.trace(state, axis1=1, axis2=3)
     rho2 = jnp.trace(state, axis1=0, axis2=2)
     state = state.reshape((4, 4))
-    whole_spec = jnp.linalg.eigvalsh(state) + eps
-    whole_spec = whole_spec / whole_spec.sum()
-    spec1 = jnp.linalg.eigvalsh(rho1) + eps
-    spec1 = spec1 / spec1.sum()
-    spec2 = jnp.linalg.eigvalsh(rho2) + eps
-    spec2 = spec2 / spec2.sum()
-    return -(spec1 * jnp.log(spec1)).sum() - (spec2 * jnp.log(spec2)).sum() + (whole_spec * jnp.log(whole_spec)).sum()
+    spec12 = jnp.linalg.eigvalsh(state)
+    spec1 = jnp.linalg.eigvalsh(rho1)
+    spec2 = jnp.linalg.eigvalsh(rho2)
+    return eps - (xlogy(spec1, spec1)).sum() - (xlogy(spec2, spec2)).sum() + (xlogy(spec12, spec12)).sum()
     '''h1 = -jnp.log((rho1 * rho1.T).sum())
     h2 = -jnp.log((rho2 * rho2.T).sum())
     state = state.reshape((4, 4))
