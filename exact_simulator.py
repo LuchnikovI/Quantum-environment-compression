@@ -55,7 +55,7 @@ def _mutual_inf(state):
     """Helper function for the exact dynamics simulation"""
 
     #eps = 1e-6
-    state = state.reshape(2, 2, 2, 2)
+    #state = state.reshape(2, 2, 2, 2)
     rho1 = jnp.trace(state, axis1=1, axis2=3)
     rho2 = jnp.trace(state, axis1=0, axis2=2)
     #whole_spec = jnp.linalg.eigvalsh(state)
@@ -65,7 +65,7 @@ def _mutual_inf(state):
     h1 = -jnp.log(jnp.tensordot(rho1, rho1, [[0, 1], [1, 0]]))
     h2 = -jnp.log(jnp.tensordot(rho2, rho2, [[0, 1], [1, 0]]))
     h12 = -jnp.log(jnp.tensordot(state, state, [[0, 1], [1, 0]]))
-    return h1 + h2 - h12
+    return state#h1 + h2 - h12
 
 
 class ExactFloquet:
