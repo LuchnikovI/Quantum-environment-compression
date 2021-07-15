@@ -55,7 +55,7 @@ def _mutual_inf(state):
     """Helper function for the exact dynamics simulation"""
 
     #eps = 1e-6
-    #state = state.reshape(2, 2, 2, 2)
+    state = state.reshape(2, 2, 2, 2)
     rho1 = jnp.trace(state, axis1=1, axis2=3)
     rho2 = jnp.trace(state, axis1=0, axis2=2)
     #whole_spec = jnp.linalg.eigvalsh(state)
@@ -64,8 +64,9 @@ def _mutual_inf(state):
     #return -(spec1 * jnp.log(spec1 + eps)).sum() - (spec2 * jnp.log(spec2 + eps)).sum() + (whole_spec * jnp.log(whole_spec + eps)).sum()
     h1 = -jnp.log(jnp.tensordot(rho1, rho1, [[0, 1], [1, 0]]))
     h2 = -jnp.log(jnp.tensordot(rho2, rho2, [[0, 1], [1, 0]]))
+    state = state.reshape((4, 4))
     h12 = -jnp.log(jnp.tensordot(state, state, [[0, 1], [1, 0]]))
-    return state#h1 + h2 - h12
+    return h1 + h2 - h12
 
 
 class ExactFloquet:
@@ -111,7 +112,7 @@ class ExactFloquet:
         apply_layer = lambda state, gate_sides: _apply_gate(state, gate_sides[0], gate_sides[1], self.n)
         in_state = in_state.reshape(self.n * (2,))
         if mutual_inf:
-            inf = [_partial_density(in_state, [side, self.n-1]) for side in range(self.n-1)]
+            inf = [_mutual_inf(_partial_density(in_state, [side, self.n-1])) for side in range(self.n-1)]
             inf_layers = [inf]
         rho_layer = [_apply_sigma(in_state, side) for side in range(self.n)]
         rho_layers = [rho_layer]
@@ -123,7 +124,7 @@ class ExactFloquet:
             rho_layer = [_apply_sigma(in_state, side) for side in range(self.n)]
             rho_layers.append(rho_layer)
             if mutual_inf:
-                inf = [_partial_density(in_state, [side, self.n-1]) for side in range(self.n-1)]
+                inf = [_mutual_inf(_partial_density(in_state, [side, self.n-1])) for side in range(self.n-1)]
                 inf_layers.append(inf)
         if mutual_inf:
             return jnp.array(rho_layers), jnp.array(inf_layers)
