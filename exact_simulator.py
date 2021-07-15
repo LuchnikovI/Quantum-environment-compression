@@ -59,10 +59,10 @@ def _mutual_inf(state):
     rho1 = jnp.trace(state, axis1=1, axis2=3)
     rho2 = jnp.trace(state, axis1=0, axis2=2)
     state = state.reshape((4, 4))
-    whole_spec = jnp.linalg.eigvalsh(state)
-    spec1 = jnp.linalg.eigvalsh(rho1)
-    spec2 = jnp.linalg.eigvalsh(rho2)
-    return -(spec1 * jnp.log(spec1 + eps)).sum() - (spec2 * jnp.log(spec2 + eps)).sum() + (whole_spec * jnp.log(whole_spec + eps)).sum()
+    whole_spec = jnp.linalg.eigvalsh(state) + eps
+    spec1 = jnp.linalg.eigvalsh(rho1) + eps
+    spec2 = jnp.linalg.eigvalsh(rho2) + eps
+    return -(spec1 * jnp.log(spec1)).sum() - (spec2 * jnp.log(spec2)).sum() + (whole_spec * jnp.log(whole_spec)).sum()
     '''h1 = -jnp.log((rho1 * rho1.T).sum())
     h2 = -jnp.log((rho2 * rho2.T).sum())
     state = state.reshape((4, 4))
