@@ -66,7 +66,7 @@ def _mutual_inf(state):
     h2 = -jnp.log((rho2 * rho2.T).sum())
     state = state.reshape((4, 4))
     h12 = -jnp.log((state * state.T).sum())
-    return state.reshape((4, 4))
+    return h1 + h2 - h12
 
 
 class ExactFloquet:
