@@ -54,7 +54,7 @@ def _partial_density(state,
 def _mutual_inf(state):
     """Helper function for the exact dynamics simulation"""
 
-    #eps = 1e-6
+    eps = 1e-6
     state = state.reshape(2, 2, 2, 2)
     rho1 = jnp.trace(state, axis1=1, axis2=3)
     rho2 = jnp.trace(state, axis1=0, axis2=2)
@@ -62,7 +62,7 @@ def _mutual_inf(state):
     whole_spec = jnp.linalg.eigvalsh(state)
     spec1 = jnp.linalg.eigvalsh(rho1)
     spec2 = jnp.linalg.eigvalsh(rho2)
-    return -(spec1 * jnp.log(spec1)).sum() - (spec2 * jnp.log(spec2)).sum() + (whole_spec * jnp.log(whole_spec)).sum()
+    return -(spec1 * jnp.log(spec1 + eps)).sum() - (spec2 * jnp.log(spec2 + eps)).sum() + (whole_spec * jnp.log(whole_spec + eps)).sum()
     '''h1 = -jnp.log((rho1 * rho1.T).sum())
     h2 = -jnp.log((rho2 * rho2.T).sum())
     state = state.reshape((4, 4))
