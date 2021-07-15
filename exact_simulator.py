@@ -111,7 +111,7 @@ class ExactFloquet:
         apply_layer = lambda state, gate_sides: _apply_gate(state, gate_sides[0], gate_sides[1], self.n)
         in_state = in_state.reshape(self.n * (2,))
         if mutual_inf:
-            inf = [_mutual_inf(_partial_density(in_state, [side, self.n-1])) for side in range(self.n-1)]
+            inf = [_partial_density(in_state, [side, self.n-1]) for side in range(self.n-1)]
             inf_layers = [inf]
         rho_layer = [_apply_sigma(in_state, side) for side in range(self.n)]
         rho_layers = [rho_layer]
@@ -123,7 +123,7 @@ class ExactFloquet:
             rho_layer = [_apply_sigma(in_state, side) for side in range(self.n)]
             rho_layers.append(rho_layer)
             if mutual_inf:
-                inf = [_mutual_inf(_partial_density(in_state, [side, self.n-1])) for side in range(self.n-1)]
+                inf = [_partial_density(in_state, [side, self.n-1]) for side in range(self.n-1)]
                 inf_layers.append(inf)
         if mutual_inf:
             return jnp.array(rho_layers), jnp.array(inf_layers)
