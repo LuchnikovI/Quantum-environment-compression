@@ -10,7 +10,6 @@ sigma_psd = sigma + jnp.eye(2)
 lmbd, u = jnp.linalg.eigh(sigma_psd)
 u = u.transpose((0, 2, 1)).conj()
 sq_sigma = jnp.sqrt(lmbd)[..., jnp.newaxis] * u
-Id = jnp.eye(2)
 
 
 def _apply_gate(state,
@@ -45,12 +44,12 @@ def _partial_density(state,
 
     min_idx = min(sides)
     max_idx = max(sides)
+    Id = jnp.eye(2, dtype=jnp.complex64)
     state = jnp.tensordot(state, Id, axes=[[max_idx], [1]])
     state = jnp.tensordot(state, Id, axes=[[min_idx], [1]])
     state = state.reshape((-1, 4))
     state = state[..., jnp.newaxis] * state[:, jnp.newaxis].conj()
     state = state.sum(0)
-    state = state / jnp.trace(state)
     return state
 
 def _mutual_inf(state):
