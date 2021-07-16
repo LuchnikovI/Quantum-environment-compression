@@ -57,8 +57,8 @@ def _mutual_inf(state):
 
     eps = 1e-5
     state = state.reshape((2, 2, 2, 2))
-    rho1 = jnp.trace(state, axis1=1, axis2=3)
-    rho2 = jnp.trace(state, axis1=0, axis2=2)
+    rho1 = jnp.einsum('iqjq->ij', state)
+    rho2 = jnp.einsum('qiqj->ij', state)
     state = state.reshape((4, 4))
     h12 = -jnp.log((state * state.T).sum())
     h1 = -jnp.log((rho1 * rho1.T).sum())
