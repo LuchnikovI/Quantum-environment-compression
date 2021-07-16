@@ -50,6 +50,7 @@ def _partial_density(state,
     state = state.reshape((-1, 4))
     state = state[..., jnp.newaxis] * state[:, jnp.newaxis].conj()
     state = state.sum(0)
+    state = state / jnp.trace(state)
     return state
 
 def _mutual_inf(state):
