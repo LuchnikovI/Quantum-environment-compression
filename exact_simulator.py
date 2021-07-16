@@ -60,19 +60,18 @@ def _mutual_inf(state):
     rho1 = jnp.einsum('iqjq->ij', state)
     rho2 = jnp.einsum('qiqj->ij', state)
     state = state.reshape((4, 4))
-    h12 = -jnp.log((state * state.T).sum())
+    '''h12 = -jnp.log((state * state.T).sum())
     h1 = -jnp.log((rho1 * rho1.T).sum())
-    h2 = -jnp.log((rho2 * rho2.T).sum())
-    '''spec12 = jnp.linalg.eigvalsh(state)
+    h2 = -jnp.log((rho2 * rho2.T).sum())'''
+    spec12 = jnp.linalg.eigvalsh(state)
     spec1 = jnp.linalg.eigvalsh(rho1)
     spec2 = jnp.linalg.eigvalsh(rho2)
-    return eps - xlogy(spec1, spec1).sum() - xlogy(spec2, spec2).sum() + xlogy(spec12, spec12).sum()'''
+    return -xlogy(spec1, spec1).sum() - xlogy(spec2, spec2).sum() + xlogy(spec12, spec12).sum()
     '''h1 = -jnp.log((rho1 * rho1.T).sum())
     h2 = -jnp.log((rho2 * rho2.T).sum())
     state = state.reshape((4, 4))
     h12 = -jnp.log((state * state.T).sum())
     return h1 + h2 - h12'''
-    return h1 + h2 - h12
 
 
 class ExactFloquet:
