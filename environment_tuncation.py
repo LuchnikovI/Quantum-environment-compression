@@ -64,3 +64,40 @@ def embedding(gates,
                 print('dim = {}'.format(env[0].shape[0]))
     embedding_matrices = environment.build_system(system_block, env)
     return embedding_matrices
+
+def dynamics_with_embedding(embedding_matrices,
+                            in_state,
+                            use_control=False,
+                            control_seq):
+    """Returns dynamics of a system from embedding matrices.
+
+    Args:
+        embedding_matrices: list of complex valued matrices
+        in_state: complex valued array of shape (2,)
+        use_control: boolean flag showing whether to use control
+            or not
+        control_seq: None, or complex valued array of shape (depth, 2, 2),
+            unitary gates representing a control sequance
+
+    Returns:
+        complex valued array of shape (time_steps, 2, 2)"""
+
+    sys_rhos = []
+    sys_rho = in_state.reshape((-1, 2))
+    sys_rho = sys_rho[..., jnp.newaxis] * sys_rho[:, jnp.newaxis].conj()
+    sys_rho = sys_rho.sum(0)
+    sys_rhos.append(sys_rho)
+
+    for i, transition_matrix in enumerate(embedding_matrices[::-1]):
+        in_state = jnp.tensordot(transition_matrix, in_state, axes=1)
+        in_state = in_state / jnp.linalg.norm(in_state)
+        if use_control:
+            in_state = in_state.reshape((-1, 2))
+            in_state = jnp.tensordot(in_state, control_seq[i], axes=[[1], [1]])
+            in_state = in_state.reshape((-1,))
+        sys_rho = in_state.reshape((-1, 2))
+        sys_rho = sys_rho[..., jnp.newaxis] * sys_rho[:, jnp.newaxis].conj()
+        sys_rho = sys_rho.sum(0)
+        sys_rhos.append(sys_rho)
+
+    return jnp.array(sys_rhos)
