@@ -48,7 +48,7 @@ def dynamics(gates,
             between the first spin and each other spin"""
 
     def iter_over_in_state(total_state, spin_state):
-        return jnp.tensordot(state.reshape((2, -1)).sum(0), spin_state, axes=0), None
+        return jnp.tensordot(state.reshape((2, -1)).sum(0), spin_state, axes=0).reshape((-1,)), None
     in_state = jnp.concatenate([jnp.array([1.]), jnp.zeros((2 ** n - 1,))], axis=0)
     state, _ = lax.scan(iter_over_in_state, in_state, state)
         
