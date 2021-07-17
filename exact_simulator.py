@@ -55,7 +55,6 @@ def _partial_density(state,
 def _mutual_inf(state):
     """Helper function for the exact dynamics simulation"""
 
-    eps = 1e-5
     state = state.reshape((2, 2, 2, 2))
     rho1 = jnp.einsum('iqjq->ij', state)
     rho2 = jnp.einsum('qiqj->ij', state)
