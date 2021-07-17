@@ -33,7 +33,8 @@ def dynamics(gates,
     Args:
         gates: complex valued array of shape (n-1, 4, 4),
             two qubit unitary gates
-        state: complex valued tensor of shape (2 ** n,)
+        state: complex valued array of shape (n, 2),
+            initial state of each spin, overall state is separable
         depth: int value representing depth of a circuit
         n: int value representing number of spins
         control_seq: None, of complex valued array of shape (depth, 2, 2),
@@ -46,6 +47,11 @@ def dynamics(gates,
         mut_inf: real valued array of shape (depth, n-1), mutual information
             between the first spin and each other spin"""
 
+    def iter_over_in_state(total_state, spin_state):
+        return jnp.tensordot(state.reshape((2, -1)).sum(0), spin_state, axes=0), None
+    in_state = jnp.concatenate([jnp.array([1.]), jnp.zeros((2 ** n - 1,))], axis=0)
+    state, _ = lax.scan(iter_over_in_state, in_state, state)
+        
     first_layer = gates[::2]
     second_layer = gates[1::2]
     def iter_over_gates(state, gate):
