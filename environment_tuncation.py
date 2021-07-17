@@ -68,7 +68,7 @@ def embedding(gates,
 def dynamics_with_embedding(embedding_matrices,
                             in_state,
                             use_control=False,
-                            control_seq):
+                            control_seq=None):
     """Returns dynamics of a system from embedding matrices.
 
     Args:
