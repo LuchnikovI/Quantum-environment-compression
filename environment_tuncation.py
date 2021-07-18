@@ -47,7 +47,7 @@ def embedding(gates,
     in_state = [x for x in in_state]
     in_state = in_state[1:]
     mpo = _to_mpo(gates)
-    system_block = mpo[0]
+    system_block = depth * [mpo[0]]
     mpo = mpo[1:]
     mpo_in = [jnp.tensordot(mpo_block, state[:, jnp.newaxis], axes=1) for mpo_block, state in zip(mpo, in_state)]
     mpo = (depth - 1) * [mpo] + [mpo_in]
