@@ -82,21 +82,17 @@ def dynamics_with_embedding(embedding_matrices,
         complex valued array of shape (time_steps, 2, 2)"""
 
     sys_rhos = []
-    sys_rho = in_state.reshape((-1, 2))
-    sys_rho = sys_rho[..., jnp.newaxis] * sys_rho[:, jnp.newaxis].conj()
-    sys_rho = sys_rho.sum(0)
-    sys_rhos.append(sys_rho)
 
     for i, transition_matrix in enumerate(embedding_matrices[::-1]):
+        sys_rho = in_state.reshape((-1, 2))
+        sys_rho = sys_rho[..., jnp.newaxis] * sys_rho[:, jnp.newaxis].conj()
+        sys_rho = sys_rho.sum(0)
+        sys_rhos.append(sys_rho)
         in_state = jnp.tensordot(transition_matrix, in_state, axes=1)
         in_state = in_state / jnp.linalg.norm(in_state)
         if use_control:
             in_state = in_state.reshape((-1, 2))
             in_state = jnp.tensordot(in_state, control_seq[i], axes=[[1], [1]])
             in_state = in_state.reshape((-1,))
-        sys_rho = in_state.reshape((-1, 2))
-        sys_rho = sys_rho[..., jnp.newaxis] * sys_rho[:, jnp.newaxis].conj()
-        sys_rho = sys_rho.sum(0)
-        sys_rhos.append(sys_rho)
 
     return jnp.array(sys_rhos)
