@@ -14,8 +14,8 @@ def _mut_inf(rho):
     return h1 + h2 - h12
 
 
-def _one_qubit_desn(rhos):
-    rho1 = jnp.einsum('iqjq->ij', rhos[0].reshape((2, 2, 2, 2)))[jnp.newaxis]
+def _one_qubit_dens(rhos):
+    rho1 = jnp.einsum('piqjq->pij', rhos[0].reshape((1, 2, 2, 2, 2)))
     rho2 = jnp.einsum('pqiqj->pij', rhos.reshape((-1, 2, 2, 2, 2)))
     return jnp.concatenate([rho1, rho2], axis=0)
 
@@ -68,7 +68,7 @@ def dynamics(gates,
     def iter_over_layers(state, control):
         _, rhos = lax.scan(iter_over_qubits, state, xs=None, length=n-1)
         mut_inf = _mut_inf(rhos)
-        rhos = _one_qubit_desn(rhos)
+        rhos = _one_qubit_dens(rhos)
         state, _ = lax.scan(iter_over_gates, state, first_layer)
         state = state.reshape((2, -1))
         state = state.T

@@ -18,7 +18,7 @@ def _to_mpo(gates):
     up_block = up_block[1:]
     down_block = down_block[:-1]
     def combine(i, up_block, down_block):
-        if i // 2 == 0:
+        if i % 2 == 0:
             mpo_block = jnp.tensordot(up_block[i], down_block[i], axes=1)
             mpo_block = mpo_block.transpose((0, 2, 1, 3))
         else:
