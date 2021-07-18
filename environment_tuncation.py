@@ -62,8 +62,8 @@ def embedding(gates,
             print(norm)
             if env[0].shape[0] > max_dim:
                 print('dim = {}'.format(env[0].shape[0]))
-    embedding_matrices = environment.build_system(system_block, env)
-    return embedding_matrices
+    #embedding_matrices = environment.build_system(system_block, env)
+    return env#embedding_matrices
 
 def dynamics_with_embedding(embedding_matrices,
                             in_state,
