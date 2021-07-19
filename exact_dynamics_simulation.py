@@ -1,16 +1,20 @@
 import jax.numpy as jnp
 from jax import lax, jit, vmap
 from functools import partial
+from scipy.special import xlogy
 
 
 @vmap
 def _mut_inf(rho):
-    h12 = -jnp.log((rho * rho.T).sum())
+    lmbd12 = jnp.linalg.eigvalsh(rho)
+    h12 = -xlogy(lmbd12, lmbd12)
     rho = rho.reshape((2, 2, 2, 2))
     rho1 = jnp.einsum('iqjq->ij', rho)
     rho2 = jnp.einsum('qiqj->ij', rho)
-    h1 = -jnp.log((rho1 * rho1.T).sum())
-    h2 = -jnp.log((rho2 * rho2.T).sum())
+    lmbd1 = jnp.linalg.eigvalsh(rho1)
+    h1 = -xlogy(lmbd1, lmbd1)
+    lmbd2 = jnp.linalg.eigvalsh(rho2)
+    h2 = -xlogy(lmbd2, lmbd2)
     return h1 + h2 - h12
 
 
