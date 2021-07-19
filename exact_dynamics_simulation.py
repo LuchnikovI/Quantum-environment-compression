@@ -7,13 +7,16 @@ from jax.scipy.special import xlogy
 @vmap
 def _mut_inf(rho):
     lmbd12 = jnp.linalg.eigvalsh(rho)
+    lmbd12 = jnp.maximum(lmbd12, 0)
     h12 = -xlogy(lmbd12, lmbd12).sum()
     rho = rho.reshape((2, 2, 2, 2))
     rho1 = jnp.einsum('iqjq->ij', rho)
     rho2 = jnp.einsum('qiqj->ij', rho)
     lmbd1 = jnp.linalg.eigvalsh(rho1)
+    lmbd1 = jnp.maximum(lmbd1, 0)
     h1 = -xlogy(lmbd1, lmbd1).sum()
     lmbd2 = jnp.linalg.eigvalsh(rho2)
+    lmbd2 = jnp.maximum(lmbd2, 0)
     h2 = -xlogy(lmbd2, lmbd2).sum()
     return h1 + h2 - h12
 
