@@ -1,7 +1,7 @@
 import jax.numpy as jnp
 from jax import lax, jit, vmap
 from functools import partial
-from scipy.special import xlogy
+from jax.scipy.special import xlogy
 
 
 @vmap
