@@ -20,13 +20,14 @@ def _one_qubit_dens(rhos):
     return jnp.concatenate([rho1, rho2], axis=0)
 
 
-@partial(jit, static_argnums=(2, 3, 5))
+@partial(jit, static_argnums=(2, 3, 5, 6))
 def dynamics(gates,
              state,
              depth,
              n,
              control_seq=None,
-             use_control=False):
+             use_control=False,
+             dtype=jnp.complex64):
     """This function allows simulating dynamics of a spin chain consisting
     of an odd number of spins.
 
@@ -49,7 +50,7 @@ def dynamics(gates,
 
     def iter_over_in_state(total_state, spin_state):
         return jnp.tensordot(total_state.reshape((2, -1))[0], spin_state, axes=0).reshape((-1,)), None
-    in_state = jnp.concatenate([jnp.array([1.], dtype=jnp.complex64), jnp.zeros((2 ** n - 1,), dtype=jnp.complex64)], axis=0)
+    in_state = jnp.concatenate([jnp.array([1.], dtype=dtype), jnp.zeros((2 ** n - 1,), dtype=dtype)], axis=0)
     state, _ = lax.scan(iter_over_in_state, in_state, state)
         
     first_layer = gates[::2]
