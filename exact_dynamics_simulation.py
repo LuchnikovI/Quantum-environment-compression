@@ -57,7 +57,7 @@ def choi(gates,
     in_state = jnp.concatenate([jnp.array([1.], dtype=dtype), jnp.zeros((2 ** n - 1,), dtype=dtype)], axis=0)
     state, _ = lax.scan(iter_over_in_state, in_state, state)
     state = jnp.tensordot(jnp.eye(4, dtype=dtype) / 2, state, axes=0)
-    state = state.reshape((2, -1))
+    state = state.reshape((-1,))
         
     first_layer = gates[::2]
     second_layer = gates[1::2]
