@@ -45,7 +45,6 @@ def embedding(gates,
         eps: float value, admissible truncation error"""
 
     in_state = [x for x in in_state]
-    in_state = in_state[1:]
     mpo = _to_mpo(gates)
     system_block = depth * [mpo[0]]
     mpo = mpo[1:]
