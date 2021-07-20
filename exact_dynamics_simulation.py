@@ -56,7 +56,7 @@ def choi(gates,
         return jnp.tensordot(total_state.reshape((2, -1))[0], spin_state, axes=0).reshape((-1,)), None
     in_state = jnp.concatenate([jnp.array([1.], dtype=dtype), jnp.zeros((2 ** (n - 1) - 1,), dtype=dtype)], axis=0)
     state, _ = lax.scan(iter_over_in_state, in_state, state)
-    state = jnp.tensordot(jnp.eye(2, dtype=dtype) / 2, state, axes=0)
+    state = jnp.tensordot(jnp.eye(2, dtype=dtype) / jnp.sqrt(2), state, axes=0)
     state = state.reshape((-1,))
         
     first_layer = gates[::2]
@@ -91,5 +91,5 @@ def choi(gates,
 def dynamics(in_state, choi):
     circ_shape = choi.shape[:2]
     choi = choi.reshape((*circ_shape, 2, 2, 2, 2))
-    rhos = 2 * jnp.einsum('qpkimj,m,k->qpij', choi, in_state, in_state.conj())
+    rhos = 2 * jnp.einsum('qpkimj,k,m->qpij', choi, in_state, in_state.conj())
     return rhos
