@@ -28,20 +28,20 @@ def _one_qubit_dens(rhos):
 
 
 @partial(jit, static_argnums=(2, 3, 5, 6))
-def dynamics(gates,
+def channels(gates,
              state,
              depth,
              n,
              control_seq=None,
              use_control=False,
              dtype=jnp.complex64):
-    """This function allows simulating dynamics of a spin chain consisting
-    of an odd number of spins.
+    """This function returns Choi matrices describing quantum channels with
+    input in 0-th position and output in any position for all time steps.
 
     Args:
         gates: complex valued array of shape (n-1, 4, 4),
             two qubit unitary gates
-        state: complex valued array of shape (n, 2),
+        state: complex valued array of shape (n-1, 2),
             initial state of each spin, overall state is separable
         depth: int value representing depth of a circuit
         n: int value representing number of spins
@@ -50,21 +50,20 @@ def dynamics(gates,
         use_control: boolean value showing whether one uses control or not
 
     Returns:
-        rhos: complex valued array of shape (depth, n, 2, 2), density matrices
-            of each spin at each discrete time moment
-        mut_inf: real valued array of shape (depth, n-1), mutual information
-            between the first spin and each other spin"""
+        rhos: complex valued array of shape (depth, n, 4, 4), choi matrices"""
 
     def iter_over_in_state(total_state, spin_state):
         return jnp.tensordot(total_state.reshape((2, -1))[0], spin_state, axes=0).reshape((-1,)), None
     in_state = jnp.concatenate([jnp.array([1.], dtype=dtype), jnp.zeros((2 ** n - 1,), dtype=dtype)], axis=0)
     state, _ = lax.scan(iter_over_in_state, in_state, state)
+    state = jnp.tensordot(jnp.eye(4, dtype) / 2, state, axes=0)
+    state = state.reshape((2, -1))
         
     first_layer = gates[::2]
     second_layer = gates[1::2]
     def iter_over_gates(state, gate):
-        state = state.reshape((4, -1))
-        state = jnp.tensordot(state, gate, [[0], [1]])
+        state = state.reshape((2, 4, -1))
+        state = jnp.tensordot(state, gate, [[1], [1]])
         return state.reshape((-1,)), None
     def iter_over_qubits(state, x):
         state = state.reshape((4, -1))
@@ -75,19 +74,16 @@ def dynamics(gates,
         return state, rho
     def iter_over_layers(state, control):
         _, rhos = lax.scan(iter_over_qubits, state, xs=None, length=n-1)
-        mut_inf = _mut_inf(rhos)
-        rhos = _one_qubit_dens(rhos)
         state, _ = lax.scan(iter_over_gates, state, first_layer)
-        state = state.reshape((2, -1))
-        state = state.T
-        state = state.reshape((2, -1))
-        state = state.T
+        state = state.reshape((2, 4, -1))
+        state = state.transpose((0, 2, 1))
         state = state.reshape((-1,))
         state, _ = lax.scan(iter_over_gates, state, second_layer)
         if use_control:
-            state = state.reshape((2, -1))
-            state = jnp.tensordot(control, state, axes=1)
+            state = state.reshape((2, 2, -1))
+            state = jnp.tensordot(control, state, [[1], [1]])
+            state = state.transpose((1, 0, 2))
             state = state.reshape((-1,))
-        return state, (rhos, mut_inf)
-    _, (rhos, mut_inf) = lax.scan(iter_over_layers, state, xs=control_seq, length=depth)
-    return rhos, mut_inf.real
+        return state, rhos
+    _, rhos = lax.scan(iter_over_layers, state, xs=control_seq, length=depth)
+    return rhos
