@@ -91,5 +91,5 @@ def choi(gates,
 def dynamics(in_state, choi):
     circ_shape = choi.shape[:2]
     choi = choi.reshape((*circ_shape, 2, 2, 2, 2))
-    rhos = jnp.einsum('qpkimj,k,m->qpij', choi, in_state, in_state.conj())
+    rhos = 2 * jnp.einsum('qpkimj,k,m->qpij', choi, in_state, in_state.conj())
     return rhos
