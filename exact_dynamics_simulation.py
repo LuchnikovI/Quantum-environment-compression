@@ -28,13 +28,13 @@ def _one_qubit_dens(rhos):
 
 
 @partial(jit, static_argnums=(2, 3, 5, 6))
-def channels(gates,
-             state,
-             depth,
-             n,
-             control_seq=None,
-             use_control=False,
-             dtype=jnp.complex64):
+def choi(gates,
+         state,
+         depth,
+         n,
+         control_seq=None,
+         use_control=False,
+         dtype=jnp.complex64):
     """This function returns Choi matrices describing quantum channels with
     input in 0-th position and output in any position for all time steps.
 
@@ -56,7 +56,7 @@ def channels(gates,
         return jnp.tensordot(total_state.reshape((2, -1))[0], spin_state, axes=0).reshape((-1,)), None
     in_state = jnp.concatenate([jnp.array([1.], dtype=dtype), jnp.zeros((2 ** n - 1,), dtype=dtype)], axis=0)
     state, _ = lax.scan(iter_over_in_state, in_state, state)
-    state = jnp.tensordot(jnp.eye(4, dtype) / 2, state, axes=0)
+    state = jnp.tensordot(jnp.eye(4, dtype=dtype) / 2, state, axes=0)
     state = state.reshape((2, -1))
         
     first_layer = gates[::2]
