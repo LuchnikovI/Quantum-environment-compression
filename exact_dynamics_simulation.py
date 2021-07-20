@@ -73,7 +73,7 @@ def choi(gates,
         state = state.reshape((-1,))
         return state, rho
     def iter_over_layers(state, control):
-        _, rhos = lax.scan(iter_over_qubits, state, xs=None, length=n-1)
+        _, rhos = lax.scan(iter_over_qubits, state, xs=None, length=n)
         state, _ = lax.scan(iter_over_gates, state, first_layer)
         state = state.reshape((2, 4, -1))
         state = state.transpose((0, 2, 1))
