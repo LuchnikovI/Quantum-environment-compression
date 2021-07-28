@@ -88,7 +88,8 @@ def choi(gates,
     _, rhos = lax.scan(iter_over_layers, state, xs=control_seq, length=depth)
     return rhos
 
-def dynamics(in_state, choi):
+def dynamics(in_state,
+             choi):
     circ_shape = choi.shape[:2]
     choi = choi.reshape((*circ_shape, 2, 2, 2, 2))
     rhos = 2 * jnp.einsum('qpkimj,k,m->qpij', choi, in_state, in_state.conj())

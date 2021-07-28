@@ -158,7 +158,7 @@ class Environment:
 
         Returns:
             list of array like of shape (env_dim * sys_dim, int_rank, env_dim * sys_dim),
-                representing new msp kernel of the environment"""
+                representing new mps kernel of the environment"""
 
         def f(kernels):
             subsystem_ker, env_ker = kernels
@@ -168,6 +168,31 @@ class Environment:
             env_ker = env_ker.reshape((-1, 4, new_right_bond))
             return env_ker
         return list(map(f, zip(subsystem_ker, env_ker)))
+
+    def combine_subsystems(self,
+                           subsystem_ker1,
+                           subsystem_ker2):
+        """Combine two subsystems.
+
+        Args:
+            subsystem_ker1: list of array like of shape
+                (sys_dim1, int_rank, int_rank, sys_dim1),
+                representing mpo kernel of the subsystem
+            subsystem_ker2: list of array like of shape
+                (sys_dim2, int_rank, int_rank, sys_dim2),
+                representing mpo kernel of the subsystem
+
+        Returns:
+            list of array like of shape (sys_dim1 * sys_dim2, int_rank, int_rank, sys_dim1 * sys_dim2)"""
+
+        def f(kernels):
+            ker1, ker2 = kernels
+            new_right_bond = ker1.shape[-1] * ker2.shape[-1]
+            env_ker = jnp.tensordot(ker1, ker2, [[2], [1]])
+            env_ker = env_ker.transpose((3, 0, 1, 4, 2))
+            env_ker = env_ker.reshape((-1, 4, 4, new_right_bond))
+            return env_ker
+        return list(map(f, zip(subsystem_ker1, subsystem_ker2)))
 
     def build_system(self,
                      system_ker,

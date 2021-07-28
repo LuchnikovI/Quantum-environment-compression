@@ -32,7 +32,7 @@ def embedding(gates,
               depth,
               max_dim,
               eps):
-    """Returns effective model prediction dynamics of the 0-th spin.
+    """Returns effective model predictiing dynamics of the 0-th spin.
 
     Args:
         gates: complex valued array of shape (n-1, 4, 4),
@@ -62,6 +62,55 @@ def embedding(gates,
             if env[0].shape[0] > max_dim:
                 print('dim = {}'.format(env[0].shape[0]))
     return environment.build_system(system_block, env)
+
+
+def wire_embedding(gates,
+                   in_state,
+                   depth,
+                   max_dim,
+                   eps):
+    """Returns effective model predicting dynamics of the 0-th and last spins.
+
+    Args:
+        gates: complex valued array of shape (n-1, 4, 4),
+            two qubit unitary gates
+        in_state: complex valued array of shape (n, 2),
+            initial state of each spin, overall state is separable
+        depth: int value representing depth of a circuit
+        max_dim: int value, if environment dim reaches this value,
+            then it is being truncated
+        eps: float value, admissible truncation error"""
+
+    def _mpo2mps(ker):
+        shape = ker.shape
+        return ker.reshape((shape[0], 16, shape[-1]))
+    def _mps2mpo(ker):
+        shape = ker.shape
+        return ker.reshape((shape[0], 4, 4, shape[-1]))
+
+    in_state = [x for x in in_state]
+    mpo = _to_mpo(gates)
+    system_block1 = depth * [mpo[0]]
+    system_block2 = depth * [mpo[-1]]
+    mpo = mpo[1:-1]
+    mpo_in = [jnp.tensordot(mpo_block, state[:, jnp.newaxis], axes=1) for mpo_block, state in zip(mpo, in_state)]
+    mpo = (depth - 1) * [mpo] + [mpo_in]
+    mpo = list(zip(*mpo))
+    environment = Environment()
+    env = mpo[-2]
+    for mpo_block in mpo[-3::-1]:
+        env = environment.combine_subsystems(mpo_block, env)
+        if env[0].shape[0] > max_dim:
+            env = [_mpo2mps(ker) for ker in env]
+            env, log_norm = environment.set_to_canonical(env)
+            norm, env = environment.truncate_canonical(env, eps)
+            print(norm)
+            if env[0].shape[0] > max_dim:
+                print('dim = {}'.format(env[0].shape[0]))
+    env = [_mps2mpo(ker) for ker in env]
+    env = environment.add_subsystem(env, system_block2)
+    return environment.build_system(system_block1, env)
+
 
 def dynamics_with_embedding(embedding_matrices,
                             in_state,
@@ -95,3 +144,36 @@ def dynamics_with_embedding(embedding_matrices,
             in_state = in_state.reshape((-1,))
 
     return jnp.array(sys_rhos)
+
+def dynamics_with_wire_embedding(embedding_matrices,
+                                 in_state):
+    """Returns dynamics of a systems from embedding matrices.
+
+    Args:
+        embedding_matrices: list of complex valued matrices
+        in_state: complex valued array of shape (2,)
+        use_control: boolean flag showing whether to use control
+            or not
+        control_seq: None, or complex valued array of shape (depth, 2, 2),
+            unitary gates representing a control sequance
+
+    Returns:
+        two complex valued arrays of shape (time_steps, 2, 2)"""
+
+    sys1_rhos = []
+    sys2_rhos = []
+
+    for i, transition_matrix in enumerate(embedding_matrices[::-1]):
+        sys_rho = in_state.reshape((-1, 2))
+        sys_rho = sys_rho[..., jnp.newaxis] * sys_rho[:, jnp.newaxis].conj()
+        sys_rho = sys_rho.sum(0)
+        sys1_rhos.append(sys_rho)
+        sys_rho = in_state.reshape((2, -1))
+        sys_rho = sys_rho.T
+        sys_rho = sys_rho[..., jnp.newaxis] * sys_rho[:, jnp.newaxis].conj()
+        sys_rho = sys_rho.sum(0)
+        sys2_rhos.append(sys_rho)
+        in_state = jnp.tensordot(transition_matrix, in_state, axes=1)
+        in_state = in_state / jnp.linalg.norm(in_state)
+
+    return jnp.array(sys1_rhos), jnp.array(sys2_rhos)
