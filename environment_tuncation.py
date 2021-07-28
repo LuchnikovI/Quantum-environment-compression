@@ -110,7 +110,7 @@ def wire_embedding(gates,
             print(norm)
             if env[0].shape[0] > max_dim:
                 print('dim = {}'.format(env[0].shape[0]))
-    env = [_mps2mpo(ker) for ker in env]
+            env = [_mps2mpo(ker) for ker in env]
     env = environment.add_subsystem(env, system_block2)
     return environment.build_system(system_block1, env)
 
