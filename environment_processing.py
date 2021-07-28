@@ -189,7 +189,7 @@ class Environment:
             ker1, ker2 = kernels
             new_right_bond = ker1.shape[-1] * ker2.shape[-1]
             env_ker = jnp.tensordot(ker1, ker2, [[2], [1]])
-            env_ker = env_ker.transpose((3, 0, 1, 4, 2))
+            env_ker = env_ker.transpose((3, 0, 1, 4, 5, 2))
             env_ker = env_ker.reshape((-1, 4, 4, new_right_bond))
             return env_ker
         return list(map(f, zip(subsystem_ker1, subsystem_ker2)))
