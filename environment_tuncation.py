@@ -100,8 +100,8 @@ def wire_embedding(gates,
     mpo = (depth - 1) * [mpo] + [mpo_in]
     mpo = list(zip(*mpo))
     environment = Environment()
-    env = mpo[-2]
-    for mpo_block in mpo[-3::-1]:
+    env = mpo[-1]
+    for mpo_block in mpo[-2::-1]:
         env = environment.combine_subsystems(mpo_block, env)
         if env[0].shape[0] > max_dim:
             env = [_mpo2mps(ker) for ker in env]
