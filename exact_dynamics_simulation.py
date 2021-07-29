@@ -34,7 +34,8 @@ def choi(gates,
          n,
          control_seq=None,
          use_control=False,
-         dtype=jnp.complex64):
+         dtype=jnp.complex64,
+         swap_end_spins=False):
     """This function returns Choi matrices describing quantum channels with
     input in 0-th position and output in any position for all time steps.
 
@@ -57,6 +58,9 @@ def choi(gates,
     in_state = jnp.concatenate([jnp.array([1.], dtype=dtype), jnp.zeros((2 ** (n - 1) - 1,), dtype=dtype)], axis=0)
     state, _ = lax.scan(iter_over_in_state, in_state, state)
     state = jnp.tensordot(jnp.eye(2, dtype=dtype) / jnp.sqrt(2), state, axes=0)
+    if swap_end_spins:
+        state = state.reshape((2, 2, -1, 2))
+        state = state.transpose((0, 3, 2, 1))
     state = state.reshape((-1,))
         
     first_layer = gates[::2]
