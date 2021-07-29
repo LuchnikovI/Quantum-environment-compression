@@ -27,7 +27,7 @@ def _one_qubit_dens(rhos):
     return jnp.concatenate([rho1, rho2], axis=0)
 
 
-@partial(jit, static_argnums=(2, 3, 5, 6))
+@partial(jit, static_argnums=(2, 3, 5, 6, 7))
 def choi(gates,
          state,
          depth,
