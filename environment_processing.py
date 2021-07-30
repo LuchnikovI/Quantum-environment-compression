@@ -158,7 +158,7 @@ class Environment:
 
         Returns:
             list of array like of shape (env_dim * sys_dim, int_rank, env_dim * sys_dim),
-                representing new msp kernel of the environment"""
+                representing new mps kernel of the environment"""
 
         def f(kernels):
             subsystem_ker, env_ker = kernels
