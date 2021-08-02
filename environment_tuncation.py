@@ -31,7 +31,8 @@ def embedding(gates,
               in_state,
               depth,
               max_dim,
-              eps):
+              eps,
+              full_truncation=False):
     """Returns effective model predictiing dynamics of the 0-th spin.
 
     Args:
@@ -42,7 +43,9 @@ def embedding(gates,
         depth: int value representing depth of a circuit
         max_dim: int value, if environment dim reaches this value,
             then it is being truncated
-        eps: float value, admissible truncation error"""
+        eps: float value, admissible truncation error
+        full_truncation: boolean flag showing whether to use full truncation
+            of the environment or not"""
 
     in_state = [x for x in in_state]
     mpo = _to_mpo(gates)
@@ -56,7 +59,10 @@ def embedding(gates,
     for mpo_block in mpo[-2::-1]:
         env = environment.add_subsystem(mpo_block, env)
         if env[0].shape[0] > max_dim:
-            env, log_norm = environment.set_to_canonical(env)
+            if full_truncation:
+                env, r, log_norm = environment.set_to_canonical(env, revers=True)
+                env = environment.kill_extra_information(env, r, eps)
+            env, _, log_norm = environment.set_to_canonical(env)
             norm, env = environment.truncate_canonical(env, eps)
             print(norm)
             if env[0].shape[0] > max_dim:
@@ -66,7 +72,7 @@ def embedding(gates,
     print(norm)
     return environment.build_system(system_block, env)
 
-
+# does not work for the moment
 def wire_embedding(gates,
                    in_state,
                    depth,
@@ -148,6 +154,7 @@ def dynamics_with_embedding(embedding_matrices,
 
     return jnp.array(sys_rhos)
 
+# does not work for the moment
 def dynamics_with_wire_embedding(embedding_matrices,
                                  in_state):
     """Returns dynamics of a systems from embedding matrices.
