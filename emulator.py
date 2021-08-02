@@ -138,7 +138,7 @@ class  Floquet_dynamics:
         bloch_vectors = [[self._bloch_projection(
                          in_state, state_ax) for state_ax in range(
                                             self.number_of_sites)]]
-        for i in tqdm(range(self.number_of_steps), desc="Exact dynamics simulation", ncols=100)):
+        for i in tqdm(range(self.number_of_steps), desc="Exact dynamics simulation", ncols=100):
             in_state= self._apply_layer(in_state, self.layer, self.number_of_sites)
             bloch_vectors.append([self._bloch_projection(
                 in_state, state_ax) for state_ax in range(self.number_of_sites)])
