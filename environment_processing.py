@@ -35,22 +35,24 @@ def _push_r(ker, r):
     """Helper function for pushing orth. center backward in time."""
 
     _, dim, right_bond = ker.shape
+    left_bond = r.shape[0]
     ker = jnp.tensordot(r, ker, axes=1)
     ker = ker.reshape((-1, right_bond))
     ker, r = jnp.linalg.qr(ker)
-    ker = ker.reshape((-1, dim, right_bond))
+    ker = ker.reshape((left_bond, dim, -1))
     return ker, r
 
 def _push_r_reverse(ker, r):
     """Helper function for pushing orth. center backward in time."""
 
     left_bond, dim, _ = ker.shape
+    right_bond = r.shape[1]
     ker = jnp.tensordot(ker, r, axes=1)
     ker = ker.reshape((left_bond, -1))
     ker = ker.T
     ker, r = jnp.linalg.qr(ker)
     ker, r = ker.T, r.T
-    ker = ker.reshape((left_bond, dim, -1))
+    ker = ker.reshape((-1, dim, right_bond))
     return ker, r
 
 
