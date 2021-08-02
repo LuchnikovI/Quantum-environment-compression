@@ -67,7 +67,10 @@ def embedding(gates,
             print(norm)
             if env[0].shape[0] > max_dim:
                 print('dim = {}'.format(env[0].shape[0]))
-    env, log_norm = environment.set_to_canonical(env)
+    if full_truncation:
+        env, r, log_norm = environment.set_to_canonical(env, revers=True)
+        env = environment.kill_extra_information(env, r, eps)
+    env, _, log_norm = environment.set_to_canonical(env)
     norm, env = environment.truncate_canonical(env, eps)
     print(norm)
     return environment.build_system(system_block, env)
