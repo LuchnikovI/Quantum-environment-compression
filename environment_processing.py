@@ -35,9 +35,23 @@ def _push_r(ker, r):
     """Helper function for pushing orth. center backward in time."""
 
     _, dim, right_bond = ker.shape
+    left_bond = r.shape[0]
     ker = jnp.tensordot(r, ker, axes=1)
     ker = ker.reshape((-1, right_bond))
     ker, r = jnp.linalg.qr(ker)
+    ker = ker.reshape((left_bond, dim, -1))
+    return ker, r
+
+def _push_r_reverse(ker, r):
+    """Helper function for pushing orth. center backward in time."""
+
+    left_bond, dim, _ = ker.shape
+    right_bond = r.shape[1]
+    ker = jnp.tensordot(ker, r, axes=1)
+    ker = ker.reshape((left_bond, -1))
+    ker = ker.T
+    ker, r = jnp.linalg.qr(ker)
+    ker, r = ker.T, r.T
     ker = ker.reshape((-1, dim, right_bond))
     return ker, r
 
@@ -98,12 +112,15 @@ class Environment:
         return log_norm.real / 2
 
     def set_to_canonical(self,
-                         state):
+                         state,
+                         revers=False):
         """Set environment to the canonical form.
 
         Args:
             state: list of arrays, mps representation of an
                 environment
+            reverse: boolean flag (False for left canonical, True for right
+                canonical)
 
         Returns:
             state: list of arrays, canonical form of the environment mps
@@ -111,16 +128,56 @@ class Environment:
 
         def iter_canonic(vars, ker):
             updated_state, r, log_norm = vars
-            ker, r = _push_r(ker, r)
+            if revers:
+                ker, r = _push_r_reverse(ker, r)
+            else:
+                ker, r = _push_r(ker, r)
             norm = jnp.linalg.norm(r)
             r = r / norm
             log_norm = log_norm + jnp.log(norm)
-            updated_state.append(ker)
+            if revers:
+                updated_state = [ker] + updated_state
+            else:
+                updated_state.append(ker)
             return updated_state, r, log_norm
 
-        list_to_reduce = [([], jnp.eye(state[0].shape[0]), jnp.array(0.))] + state
-        state, _, log_norm = reduce(iter_canonic, list_to_reduce)
-        return state, log_norm
+        if revers:
+            list_to_reduce = [([], jnp.eye(state[-1].shape[2]), jnp.array(0.))] + state[::-1]
+        else:
+            list_to_reduce = [([], jnp.eye(state[0].shape[0]), jnp.array(0.))] + state
+        state, r, log_norm = reduce(iter_canonic, list_to_reduce)
+        return state, r, log_norm
+
+    def kill_extra_information(self,
+                               state,
+                               r,
+                               eps=1e-5):
+        """Deletes unnecessary information about the environment.
+
+        Args:
+            state: list of arrays, mps representation of an
+                environment
+            r: complex valued matrix keeping information about
+                orthogonality center
+            eps: singular values cut off threshold
+
+        Returns:
+            state: truncated state"""
+
+        orth_center = r.T.conj() @ r
+        u, lmbd, _ = jnp.linalg.svd(orth_center)
+
+        # setting threshold
+        sq_norm = (lmbd ** 2).sum()
+        cum_sq_norm = jnp.cumsum((lmbd ** 2)[::-1])
+        trshld = (jnp.sqrt(cum_sq_norm / sq_norm) > eps).sum()
+
+        # truncation
+        u = u[:, :trshld]
+        lmbd = lmbd[:trshld]
+        extra_ker = jnp.sqrt(lmbd)[:, jnp.newaxis] * u.conj().T
+        state[0] = jnp.tensordot(extra_ker, state[0], axes=1)
+        return state
 
     def truncate_canonical(self,
                            state,
