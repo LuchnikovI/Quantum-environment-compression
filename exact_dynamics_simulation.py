@@ -54,28 +54,37 @@ def choi(gates,
         rhos: complex valued array of shape (depth, n, 4, 4), choi matrices"""
 
     def iter_over_in_state(total_state, spin_state):
-        return jnp.tensordot(total_state.reshape((2, -1))[0], spin_state, axes=0).reshape((-1,)), None
-    in_state = jnp.concatenate([jnp.array([1.], dtype=dtype), jnp.zeros((2 ** (n - 1) - 1,), dtype=dtype)], axis=0)
+        return jnp.tensordot(total_state.reshape((2, -1))[0],
+                             spin_state, axes=0).reshape((-1,)), None
+
+    in_state = jnp.concatenate([jnp.array([1.], dtype=dtype),
+                                jnp.zeros((2 ** (n - 1) - 1,),
+                                        dtype=dtype)], axis=0)
     state, _ = lax.scan(iter_over_in_state, in_state, state)
-    state = jnp.tensordot(jnp.eye(2, dtype=dtype) / jnp.sqrt(2), state, axes=0)
+    state = jnp.tensordot(jnp.eye(2, dtype=dtype) / jnp.sqrt(2),
+                                                 state, axes=0)
     if swap_end_spins:
         state = state.reshape((2, 2, -1, 2))
         state = state.transpose((0, 3, 2, 1))
     state = state.reshape((-1,))
-        
+
     first_layer = gates[::2]
     second_layer = gates[1::2]
+
     def iter_over_gates(state, gate):
         state = state.reshape((2, 4, -1))
         state = jnp.tensordot(state, gate, [[1], [1]])
         return state.reshape((-1,)), None
+
     def iter_over_qubits(state, x):
         state = state.reshape((4, -1))
-        rho = (state[:, jnp.newaxis] * state[jnp.newaxis].conj()).sum(-1)
+        rho = (state[:, jnp.newaxis] * state[jnp.newaxis].conj(
+                                                     )).sum(-1)
         state = state.reshape((2, 2, -1))
         state = state.transpose((0, 2, 1))
         state = state.reshape((-1,))
         return state, rho
+
     def iter_over_layers(state, control):
         _, rhos = lax.scan(iter_over_qubits, state, xs=None, length=n)
         state, _ = lax.scan(iter_over_gates, state, first_layer)
@@ -89,6 +98,7 @@ def choi(gates,
             state = state.transpose((1, 0, 2))
             state = state.reshape((-1,))
         return state, rhos
+
     _, rhos = lax.scan(iter_over_layers, state, xs=control_seq, length=depth)
     return rhos
 

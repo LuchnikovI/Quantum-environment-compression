@@ -9,6 +9,8 @@ def _push_dens(ker,
     """Helper function for pushing dens. matrix forward in time."""
 
     # pushing dens. matrix
+    print('Kernel shape = ', ker.shape,
+          'U shape = ', u.shape)
     ker = jnp.tensordot(ker, u, axes=1)
     dim, rank = ker.shape[1:]
     ker = ker.reshape((-1, dim*rank))
@@ -27,7 +29,10 @@ def _push_dens(ker,
     u = u[:, :trshld]
     lmbd = lmbd[:trshld]
     u = q @ u
-    ker = jnp.tensordot(u.conj().T, ker.reshape((-1, dim, rank)), axes=1)
+    ker = jnp.tensordot(u.conj().T, ker.reshape((-1, dim, rank)),
+                                                         axes=1)
+    print('Truncated Kernel shape= ', ker.shape,
+          'Truncated U shape = ', u.shape)
     return u, lmbd, ker
 
 
@@ -56,16 +61,14 @@ def _push_r_reverse(ker, r):
     return ker, r
 
 
-def _push_dens_naive(ker,
-                     rho):
+def _push_dens_naive(ker, rho):
     """Helper function for pushing dens. matrix forward in time (naive)."""
 
-    rho = jnp.einsum('iqk,kn,jqn->ij',
+    return jnp.einsum('iqk,kn,jqn->ij',
                      ker,
                      rho,
                      ker.conj(),
                      optimize='optimal')
-    return rho
 
 
 class Environment:
@@ -73,20 +76,18 @@ class Environment:
     def __init__(self):
         pass
 
-    def init_random(self,
-                    key,
-                    n,
-                    dim,
-                    chi):
+    def init_random(self, key, n, dim, chi):
+        """ Initialize random MPS"""
 
         def sample(shape, key):
+            """ Return the random sample with given shape"""
             ker = random.normal(key, shape + (2,))
-            ker = ker[..., 0] + 1j * ker[..., 1]
-            return ker
+            return ker[..., 0] + 1j * ker[..., 1]
+
         keys = random.split(key, n)
         mps = [sample((chi, dim, chi), key) for key in keys[:-2]]
-        mps = [sample((chi, dim, chi), keys[-2])] + mps + [sample((chi, dim, 1), keys[-1])]
-        return mps
+        return [sample((chi, dim, chi), keys[-2])] + mps + [
+                                 sample((chi, dim, 1), keys[-1])]
 
     def norm(self,
              state):
@@ -102,10 +103,10 @@ class Environment:
             log_norm, rho = vars
             rho = _push_dens_naive(ker, rho)
             norm = jnp.linalg.norm(rho)
-            log_norm = log_norm + jnp.log(norm)
-            rho = rho / norm
-            return log_norm, rho
-        list_to_reduce = [(jnp.array(0.), jnp.array([[1.]]))] + state[::-1]
+            return log_norm + jnp.log(norm), rho / norm
+
+        list_to_reduce = [(jnp.array(0.), jnp.array([[1.]]))] + \
+                                                  state[::-1]
         log_norm, final_rho = reduce(iter, list_to_reduce)
         final_norm = jnp.trace(final_rho)
         log_norm = log_norm + jnp.log(final_norm)
@@ -142,9 +143,12 @@ class Environment:
             return updated_state, r, log_norm
 
         if revers:
-            list_to_reduce = [([], jnp.eye(state[-1].shape[2]), jnp.array(0.))] + state[::-1]
+            list_to_reduce = [([], jnp.eye(state[-1].shape[2]),
+                                jnp.array(0.))] + state[::-1]
         else:
-            list_to_reduce = [([], jnp.eye(state[0].shape[0]), jnp.array(0.))] + state
+            list_to_reduce = [([], jnp.eye(state[0].shape[0]),
+                                            jnp.array(0.))] +\
+                                                        state
         state, r, log_norm = reduce(iter_canonic, list_to_reduce)
         return state, r, log_norm
 
@@ -197,7 +201,8 @@ class Environment:
             u, lmbd, ker = _push_dens(ker, u, lmbd, eps)
             updated_state.append(ker)
             return updated_state, u, lmbd
-        list_to_reduce = [([], jnp.array([[1.]]), jnp.array([1.]))] + state[::-1]
+        list_to_reduce = [([], jnp.array([[1.]]), jnp.array([1.]))] + \
+                                                        state[::-1]
         state, final_u, final_lmbd = reduce(iter_trunc, list_to_reduce)
         return jnp.sqrt((final_lmbd ** 2).sum()), state[::-1]
 
@@ -214,7 +219,8 @@ class Environment:
                 representing mps kernel of the environment
 
         Returns:
-            list of array like of shape (env_dim * sys_dim, int_rank, env_dim * sys_dim),
+            list of array like of shape (env_dim * sys_dim, int_rank,
+                                                    env_dim * sys_dim),
                 representing new mps kernel of the environment"""
 
         def f(kernels):
@@ -240,7 +246,8 @@ class Environment:
                 representing mpo kernel of the subsystem
 
         Returns:
-            list of array like of shape (sys_dim1 * sys_dim2, int_rank, int_rank, sys_dim1 * sys_dim2)"""
+            list of array like of shape (sys_dim1 * sys_dim2, int_rank,
+                                         int_rank, sys_dim1 * sys_dim2)"""
 
         def f(kernels):
             ker1, ker2 = kernels

@@ -24,7 +24,8 @@ def _to_mpo(gates):
         else:
             mpo_block = jnp.tensordot(down_block[i], up_block[i], axes=1)
         return mpo_block
-    return [system_block] + [combine(i, up_block, down_block) for i in range(down_block.shape[0])] + [last_block]
+    return [system_block] + [combine(i, up_block, down_block) for i in range(
+                                         down_block.shape[0])] + [last_block]
 
 
 def embedding(gates,
@@ -32,7 +33,9 @@ def embedding(gates,
               depth,
               max_dim,
               eps,
-              full_truncation=False):
+              full_truncation=False,
+              trunc_iter_num=1):
+
     """Returns effective model predictiing dynamics of the 0-th spin.
 
     Args:
@@ -51,7 +54,8 @@ def embedding(gates,
     mpo = _to_mpo(gates)
     system_block = depth * [mpo[0]]
     mpo = mpo[1:]
-    mpo_in = [jnp.tensordot(mpo_block, state[:, jnp.newaxis], axes=1) for mpo_block, state in zip(mpo, in_state)]
+    mpo_in = [jnp.tensordot(mpo_block, state[:, jnp.newaxis],
+                axes=1) for mpo_block, state in zip(mpo, in_state)]
     mpo = (depth - 1) * [mpo] + [mpo_in]
     mpo = list(zip(*mpo))
     environment = Environment()
@@ -60,11 +64,13 @@ def embedding(gates,
         env = environment.add_subsystem(mpo_block, env)
         if env[0].shape[0] > max_dim:
             if full_truncation:
-                env, r, log_norm = environment.set_to_canonical(env, revers=True)
-                env = environment.kill_extra_information(env, r, eps)
-            env, _, log_norm = environment.set_to_canonical(env)
-            norm, env = environment.truncate_canonical(env, eps)
-            print(norm)
+                for i in range(trunc_iter_num):
+                    env, r, log_norm = environment.set_to_canonical(env,
+                                                             revers=True)
+                    env = environment.kill_extra_information(env, r, eps)
+                    env, _, log_norm = environment.set_to_canonical(env)
+                    norm, env = environment.truncate_canonical(env, eps)
+            print('Norm after truncation = ', norm)
             if env[0].shape[0] > max_dim:
                 print('dim = {}'.format(env[0].shape[0]))
     if full_truncation:
@@ -72,7 +78,7 @@ def embedding(gates,
         env = environment.kill_extra_information(env, r, eps)
     env, _, log_norm = environment.set_to_canonical(env)
     norm, env = environment.truncate_canonical(env, eps)
-    print(norm)
+    print('Norm after truncation = ', norm)
     return environment.build_system(system_block, env)
 
 # does not work for the moment
@@ -105,7 +111,8 @@ def wire_embedding(gates,
     system_block1 = depth * [mpo[0]]
     system_block2 = depth * [mpo[-1]]
     mpo = mpo[1:-1]
-    mpo_in = [jnp.tensordot(mpo_block, state[:, jnp.newaxis], axes=1) for mpo_block, state in zip(mpo, in_state)]
+    mpo_in = [jnp.tensordot(mpo_block, state[:, jnp.newaxis],
+                axes=1) for mpo_block, state in zip(mpo, in_state)]
     mpo = (depth - 1) * [mpo] + [mpo_in]
     mpo = list(zip(*mpo))
     environment = Environment()
