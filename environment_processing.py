@@ -2,15 +2,12 @@ from jax import numpy as jnp
 from jax import random
 from functools import reduce
 
-def _push_dens(ker,
-               u,
-               lmbd,
-               eps=1e-5):
+def _push_dens(ker, u, lmbd,
+                  eps=1e-5):
     """Helper function for pushing dens. matrix forward in time."""
 
-    # pushing dens. matrix
-    print('Kernel shape = ', ker.shape,
-          'U shape = ', u.shape)
+    # Pushing density matrix forward
+    #print('Kernel_shape=', ker.shape, ' ', 'U_shape=', u.shape)
     ker = jnp.tensordot(ker, u, axes=1)
     dim, rank = ker.shape[1:]
     ker = ker.reshape((-1, dim*rank))
@@ -31,8 +28,7 @@ def _push_dens(ker,
     u = q @ u
     ker = jnp.tensordot(u.conj().T, ker.reshape((-1, dim, rank)),
                                                          axes=1)
-    print('Truncated Kernel shape= ', ker.shape,
-          'Truncated U shape = ', u.shape)
+    #print('Truncated_Kernel_shape=', ker.shape, ' ', 'Truncated_U_shape=', u.shape)
     return u, lmbd, ker
 
 
@@ -64,11 +60,8 @@ def _push_r_reverse(ker, r):
 def _push_dens_naive(ker, rho):
     """Helper function for pushing dens. matrix forward in time (naive)."""
 
-    return jnp.einsum('iqk,kn,jqn->ij',
-                     ker,
-                     rho,
-                     ker.conj(),
-                     optimize='optimal')
+    return jnp.einsum('iqk,kn,jqn->ij', ker, rho, ker.conj(),
+                                         optimize='optimal')
 
 
 class Environment:
@@ -77,7 +70,7 @@ class Environment:
         pass
 
     def init_random(self, key, n, dim, chi):
-        """ Initialize random MPS"""
+        """ Initialize random kernels"""
 
         def sample(shape, key):
             """ Return the random sample with given shape"""
@@ -204,7 +197,7 @@ class Environment:
         list_to_reduce = [([], jnp.array([[1.]]), jnp.array([1.]))] + \
                                                         state[::-1]
         state, final_u, final_lmbd = reduce(iter_trunc, list_to_reduce)
-        return jnp.sqrt((final_lmbd ** 2).sum()), state[::-1]
+        return jnp.sqrt((final_lmbd ** 2).sum()), state[::-1], final_u
 
     def add_subsystem(self,
                       subsystem_ker,
