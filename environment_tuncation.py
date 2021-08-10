@@ -107,7 +107,7 @@ def embedding(gates, in_state, depth, max_dim, eps,
     env_last_states.append(env[0])
     print('Norm after truncation = ', norm)
 
-    return environment.build_system(system_block, env), isometries, env_last_state
+    return environment.build_system(system_block, env), isometries, env_last_states
 
 
 # Does not work for the moment
