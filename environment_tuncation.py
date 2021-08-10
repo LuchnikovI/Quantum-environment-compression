@@ -75,7 +75,7 @@ def embedding(gates, in_state, depth, max_dim, eps,
     env = mpo[-1]
     # Define environment
     isometries = []
-    for mpo_block in mpo[-2::-1]:
+    for mpo_block in tqdm(mpo[-2::-1], desc='Environment truncation'):
     # Environment truncation procedure
         env = environment.add_subsystem(mpo_block, env)
         if env[0].shape[0] > max_dim:
@@ -176,7 +176,8 @@ def dynamics_with_embedding(embedding_matrices,
 
     sys_rhos = []
 
-    for i, transition_matrix in enumerate(embedding_matrices[::-1]):
+    for i, transition_matrix in tqdm(enumerate(embedding_matrices[::-1]),
+                                    desc='Calculate dynamics with embedding'):
         sys_rho = in_state.reshape((-1, 2))
         sys_rho = sys_rho[..., jnp.newaxis] * sys_rho[:, jnp.newaxis].conj()
         sys_rho = sys_rho.sum(0)
