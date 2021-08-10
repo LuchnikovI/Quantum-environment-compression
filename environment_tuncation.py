@@ -88,7 +88,7 @@ def embedding(gates, in_state, depth, max_dim, eps,
                     env = environment.kill_extra_information(env, r, eps)
                     env, _, log_norm = environment.set_to_canonical(env)
                     norm, env, isometry = environment.truncate_canonical(env, eps)
-                    print('isometry shape = ', isometry)
+                    print('isometry shape = ', isometry.shape)
             print('Norm after truncation = ', norm)
             isometries.append(isometry)
 
