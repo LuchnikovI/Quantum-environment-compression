@@ -2,6 +2,7 @@ from jax import numpy as jnp
 from jax import random
 from functools import reduce
 
+
 def _push_dens(ker, u, lmbd,
                   eps=1e-5):
     """Helper function for pushing dens. matrix forward in time."""
@@ -43,6 +44,7 @@ def _push_r(ker, r):
     ker = ker.reshape((left_bond, dim, -1))
     return ker, r
 
+
 def _push_r_reverse(ker, r):
     """Helper function for pushing orth. center backward in time."""
 
@@ -82,6 +84,7 @@ class Environment:
         return [sample((chi, dim, chi), keys[-2])] + mps + [
                                  sample((chi, dim, 1), keys[-1])]
 
+
     def norm(self,
              state):
         """Caluclates norm of a MPS directly.
@@ -104,6 +107,7 @@ class Environment:
         final_norm = jnp.trace(final_rho)
         log_norm = log_norm + jnp.log(final_norm)
         return log_norm.real / 2
+
 
     def set_to_canonical(self,
                          state,
@@ -141,9 +145,10 @@ class Environment:
         else:
             list_to_reduce = [([], jnp.eye(state[0].shape[0]),
                                             jnp.array(0.))] +\
-                                                        state
+                                            state
         state, r, log_norm = reduce(iter_canonic, list_to_reduce)
         return state, r, log_norm
+
 
     def kill_extra_information(self,
                                state,
@@ -176,6 +181,7 @@ class Environment:
         state[0] = jnp.tensordot(extra_ker, state[0], axes=1)
         return state
 
+
     def truncate_canonical(self,
                            state,
                            eps=1e-5):
@@ -194,10 +200,12 @@ class Environment:
             u, lmbd, ker = _push_dens(ker, u, lmbd, eps)
             updated_state.append(ker)
             return updated_state, u, lmbd
+
         list_to_reduce = [([], jnp.array([[1.]]), jnp.array([1.]))] + \
                                                         state[::-1]
         state, final_u, final_lmbd = reduce(iter_trunc, list_to_reduce)
         return jnp.sqrt((final_lmbd ** 2).sum()), state[::-1], final_u
+
 
     def add_subsystem(self,
                       subsystem_ker,
@@ -208,6 +216,7 @@ class Environment:
             subsystem_ker: list of array like of shape
                 (sys_dim, int_rank, int_rank, sys_dim),
                 representing mpo kernel of the subsystem
+
             env_ker: list of array like of shape (env_dim, int_rank, env_dim)
                 representing mps kernel of the environment
 
@@ -223,7 +232,9 @@ class Environment:
             env_ker = env_ker.transpose((3, 0, 1, 4, 2))
             env_ker = env_ker.reshape((-1, 4, new_right_bond))
             return env_ker
+
         return list(map(f, zip(subsystem_ker, env_ker)))
+
 
     def combine_subsystems(self,
                            subsystem_ker1,
@@ -249,11 +260,11 @@ class Environment:
             env_ker = env_ker.transpose((3, 0, 1, 4, 5, 2))
             env_ker = env_ker.reshape((-1, 4, 4, new_right_bond))
             return env_ker
+
         return list(map(f, zip(subsystem_ker1, subsystem_ker2)))
 
-    def build_system(self,
-                     system_ker,
-                     env_ker):
+
+    def build_system(self, system_ker, env_ker):
         """Combines the system and its environment.
 
         Args:
@@ -273,13 +284,12 @@ class Environment:
             sys_ker = sys_ker.transpose((2, 0, 3, 1))
             sys_ker = sys_ker.reshape((-1, new_right_bond))
             return sys_ker
+
         return list(map(f, zip(system_ker, env_ker)))
 
-    def dynamics(self,
-                 transition_matrices,
-                 in_state,
-                 use_control=False,
-                 cntrl_seq=None):
+
+    def dynamics(self, transition_matrices, in_state,
+                 use_control=False, cntrl_seq=None):
         """Calculates dynamics of the subsystem.
 
         Args:
@@ -313,3 +323,6 @@ class Environment:
             sys_rhos.append(sys_rho)
 
         return jnp.array(sys_rhos)
+
+
+

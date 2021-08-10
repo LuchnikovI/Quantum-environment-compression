@@ -92,6 +92,7 @@ def choi(gates,
         state = state.transpose((0, 2, 1))
         state = state.reshape((-1,))
         state, _ = lax.scan(iter_over_gates, state, second_layer)
+
         if use_control:
             state = state.reshape((2, 2, -1))
             state = jnp.tensordot(control, state, [[1], [1]])
@@ -102,8 +103,8 @@ def choi(gates,
     _, rhos = lax.scan(iter_over_layers, state, xs=control_seq, length=depth)
     return rhos
 
-def dynamics(in_state,
-             choi):
+
+def dynamics(in_state, choi):
     circ_shape = choi.shape[:2]
     choi = choi.reshape((*circ_shape, 2, 2, 2, 2))
     rhos = 2 * jnp.einsum('qpkimj,k,m->qpij', choi, in_state, in_state.conj())

@@ -74,6 +74,7 @@ def embedding(gates, in_state, depth, max_dim, eps,
     environment = Environment()
     env = mpo[-1]
     # Define environment
+    isometries = []
     for mpo_block in mpo[-2::-1]:
     # Environment truncation procedure
         env = environment.add_subsystem(mpo_block, env)
@@ -85,29 +86,29 @@ def embedding(gates, in_state, depth, max_dim, eps,
                                                              revers=True)
                     env = environment.kill_extra_information(env, r, eps)
                     env, _, log_norm = environment.set_to_canonical(env)
-                    norm, env, _ = environment.truncate_canonical(env, eps)
+                    norm, env, isometry = environment.truncate_canonical(env, eps)
+                    print('isometry shape = ', isometry)
             print('Norm after truncation = ', norm)
+            isometries.append(isometry)
 
             if env[0].shape[0] > max_dim:
                 print('Truncation failed dim = {}'.format(env[0].shape[0]))
+
     if full_truncation:
         env, r, log_norm = environment.set_to_canonical(env, revers=True)
         env = environment.kill_extra_information(env, r, eps)
 
     env, _, log_norm = environment.set_to_canonical(env)
-    norm, env, _ = environment.truncate_canonical(env, eps)
+    norm, env, isometry = environment.truncate_canonical(env, eps)
+    isometries.append(isometry)
     print('Norm after truncation = ', norm)
 
-    return environment.build_system(system_block, env)
+    return environment.build_system(system_block, env), isometries, mpo
 
 
 # Does not work for the moment
 # TODO ¯\_(ツ)_/¯
-def wire_embedding(gates,
-                   in_state,
-                   depth,
-                   max_dim,
-                   eps):
+def wire_embedding(gates, in_state, depth, max_dim, eps):
     """Returns effective model predicting dynamics of the 0-th and last spins.
 
     Args:
@@ -123,6 +124,7 @@ def wire_embedding(gates,
     def _mpo2mps(ker):
         shape = ker.shape
         return ker.reshape((shape[0], 16, shape[-1]))
+
     def _mps2mpo(ker):
         shape = ker.shape
         return ker.reshape((shape[0], 4, 4, shape[-1]))
@@ -136,6 +138,7 @@ def wire_embedding(gates,
                 axes=1) for mpo_block, state in zip(mpo, in_state)]
     mpo = (depth - 1) * [mpo] + [mpo_in]
     mpo = list(zip(*mpo))
+
     environment = Environment()
     env = mpo[-1]
     for mpo_block in mpo[-2::-1]:
@@ -145,9 +148,11 @@ def wire_embedding(gates,
             env, log_norm = environment.set_to_canonical(env)
             norm, env = environment.truncate_canonical(env, eps)
             print(norm)
+
             if env[0].shape[0] > max_dim:
                 print('dim = {}'.format(env[0].shape[0]))
             env = [_mps2mpo(ker) for ker in env]
+
     env = environment.add_subsystem(env, system_block2)
     return environment.build_system(system_block1, env)
 
@@ -178,16 +183,17 @@ def dynamics_with_embedding(embedding_matrices,
         sys_rhos.append(sys_rho)
         in_state = jnp.tensordot(transition_matrix, in_state, axes=1)
         in_state = in_state / jnp.linalg.norm(in_state)
+
         if use_control:
             in_state = in_state.reshape((-1, 2))
             in_state = jnp.tensordot(in_state, control_seq[i], axes=[[1], [1]])
             in_state = in_state.reshape((-1,))
 
-    return jnp.array(sys_rhos)
+    return jnp.array(sys_rhos), in_state
+
 
 # does not work for the moment
-def dynamics_with_wire_embedding(embedding_matrices,
-                                 in_state):
+def dynamics_with_wire_embedding(embedding_matrices, in_state):
     """Returns dynamics of a systems from embedding matrices.
 
     Args:
@@ -201,19 +207,20 @@ def dynamics_with_wire_embedding(embedding_matrices,
     Returns:
         two complex valued arrays of shape (time_steps, 2, 2)"""
 
-    sys1_rhos = []
-    sys2_rhos = []
+    sys1_rhos, sys2_rhos = [], []
 
     for i, transition_matrix in enumerate(embedding_matrices[::-1]):
         sys_rho = in_state.reshape((-1, 2))
         sys_rho = sys_rho[..., jnp.newaxis] * sys_rho[:, jnp.newaxis].conj()
         sys_rho = sys_rho.sum(0)
         sys1_rhos.append(sys_rho)
+
         sys_rho = in_state.reshape((2, -1))
         sys_rho = sys_rho.T
         sys_rho = sys_rho[..., jnp.newaxis] * sys_rho[:, jnp.newaxis].conj()
         sys_rho = sys_rho.sum(0)
         sys2_rhos.append(sys_rho)
+
         in_state = jnp.tensordot(transition_matrix, in_state, axes=1)
         in_state = in_state / jnp.linalg.norm(in_state)
 
