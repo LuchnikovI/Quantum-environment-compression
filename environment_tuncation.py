@@ -1,4 +1,5 @@
 import jax.numpy as jnp
+from tqdm import tqdm
 from environment_processing import Environment
 
 
