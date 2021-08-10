@@ -76,6 +76,7 @@ def embedding(gates, in_state, depth, max_dim, eps,
     env = mpo[-1]
     # Define environment
     isometries = []
+    env_last_states = []
     for mpo_block in tqdm(mpo[-2::-1], desc='Environment truncation'):
     # Environment truncation procedure
         env = environment.add_subsystem(mpo_block, env)
@@ -91,6 +92,7 @@ def embedding(gates, in_state, depth, max_dim, eps,
                     print('isometry shape = ', isometry.shape)
             print('Norm after truncation = ', norm)
             isometries.append(isometry)
+            env_last_states.append(env[0])
 
             if env[0].shape[0] > max_dim:
                 print('Truncation failed dim = {}'.format(env[0].shape[0]))
@@ -102,9 +104,10 @@ def embedding(gates, in_state, depth, max_dim, eps,
     env, _, log_norm = environment.set_to_canonical(env)
     norm, env, isometry = environment.truncate_canonical(env, eps)
     isometries.append(isometry)
+    env_last_states.append(env[0])
     print('Norm after truncation = ', norm)
 
-    return environment.build_system(system_block, env), isometries, mpo
+    return environment.build_system(system_block, env), isometries, env_last_state
 
 
 # Does not work for the moment
