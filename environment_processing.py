@@ -204,7 +204,8 @@ class Environment:
         list_to_reduce = [([], jnp.array([[1.]]), jnp.array([1.]))] + \
                                                         state[::-1]
         state, final_u, final_lmbd = reduce(iter_trunc, list_to_reduce)
-        return jnp.sqrt((final_lmbd ** 2).sum()), state[::-1], final_u
+        norm = jnp.sqrt((final_lmbd ** 2).sum())
+        return norm, state[::-1], final_u, final_lmbd
 
 
     def add_subsystem(self,
