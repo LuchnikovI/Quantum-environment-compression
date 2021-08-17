@@ -81,19 +81,14 @@ def embedding(gates, in_state, depth, max_dim, eps,
     # Environment truncation procedure
         env = environment.add_subsystem(mpo_block, env)
         if env[0].shape[0] > max_dim:
-            #Iterative truncation
-            if full_truncation:
-                for i in range(trunc_iter_num):
-                    env, r, log_norm = environment.set_to_canonical(env,
-                                                             revers=True)
+            # Iterative truncation 
+            for i in range(trunc_iter_num):
+                if full_truncation:
+                    env, r, log_norm = environment.set_to_canonical(env, revers=True)
                     env = environment.kill_extra_information(env, r, eps)
-                    env, _, log_norm = environment.set_to_canonical(env)
-                    norm, env, isometry = environment.truncate_canonical(env, eps)
-                    print('isometry shape = ', isometry.shape)
 
-            else:
                 env, _, log_norm = environment.set_to_canonical(env)
-                norm, env, isometry = environment.truncate_canonical(env, eps)
+                norm, env, isometry, lmbd = environment.truncate_canonical(env, eps)
 
             if env[0].shape[0] > max_dim:
                 print('Truncation failed dim = {}'.format(env[0].shape[0]))
@@ -106,7 +101,7 @@ def embedding(gates, in_state, depth, max_dim, eps,
         env, r, log_norm = environment.set_to_canonical(env, revers=True)
         env = environment.kill_extra_information(env, r, eps)
     env, _, log_norm = environment.set_to_canonical(env)
-    norm, env, isometry = environment.truncate_canonical(env, eps)
+    norm, env, isometry, lmbd = environment.truncate_canonical(env, eps)
 
     isometries.append(isometry)
     env_last_states.append(env[0])
