@@ -8,7 +8,7 @@ def _push_dens(ker, u, lmbd,
     """Helper function for pushing dens. matrix forward in time."""
 
     # Pushing density matrix forward
-    #print('Kernel_shape=', ker.shape, ' ', 'U_shape=', u.shape)
+    # print('Kernel_shape=', ker.shape, ' ', 'U_shape=', u.shape)
     ker = jnp.tensordot(ker, u, axes=1)
     dim, rank = ker.shape[1:]
     ker = ker.reshape((-1, dim*rank))
@@ -29,7 +29,7 @@ def _push_dens(ker, u, lmbd,
     u = q @ u
     ker = jnp.tensordot(u.conj().T, ker.reshape((-1, dim, rank)),
                                                          axes=1)
-    #print('Truncated_Kernel_shape=', ker.shape, ' ', 'Truncated_U_shape=', u.shape)
+    # print('Truncated_Kernel_shape=', ker.shape, ' ', 'Truncated_U_shape=', u.shape)
     return u, lmbd, ker
 
 
@@ -324,6 +324,3 @@ class Environment:
             sys_rhos.append(sys_rho)
 
         return jnp.array(sys_rhos)
-
-
-
