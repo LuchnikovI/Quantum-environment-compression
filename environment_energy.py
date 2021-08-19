@@ -46,11 +46,11 @@ def calculate_exact_unitary(couplings, fields, time_interval=None):
 
     n = fields.shape[0]
     hamiltonian = sum([sum([reduce(operator_product,
-                    jnp.array(i * [pauli[0]] + 2 * [pauli[k]] + \
+                    jnp.array(i * [pauli[0]] + 2 * [pauli[k + 1]] + \
                     (n - i - 2) * [pauli[0]])) for i in range(
                      n - 1)]) for k in range(3)]) + \
                   sum([sum([reduce(operator_product,
-                    jnp.array(i * [pauli[0]] + [pauli[k]] + \
+                    jnp.array(i * [pauli[0]] + [pauli[k + 1]] + \
                     (n - i - 1) * [pauli[0]])) for i in range(
                      n - 1)]) for k in range(3)])
     if time_interval != None:
