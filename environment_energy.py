@@ -34,7 +34,7 @@ def decode_embedding(isometries, last_embedding_state):
 
 
 
-def calculate_exact_unitary(couplins, fields, time_interval=None):
+def calculate_exact_unitary(couplings, fields, time_interval=None):
     """ Return exact hamiltonian and evolution operator
         ==============================================================
         | Test function |
