@@ -19,9 +19,14 @@ def decode_embedding(isometries, last_embedding_state):
     """
     reshaped_isometries = [isometries[0]]
     for i in range(len(isometries) - 1):
-        if isometries[i + 1].shape[0] != isometries[i].shape[1]:
+        if isometries[i].shape[1] != isometries[i + 1].shape[0]:
+            add_spins = int( jnp.log(isometries[2].shape[0] /
+                                     isometries[1].shape[1]
+                                     ) / jnp.log(2))
+
             reshaped_isometries.append(isometries[i + 1].reshape(
-                                -1, 2, isometries[i + 1].shape[1]))
+                                -1, jnp.power(2, add_spins),
+                                isometries[i + 1].shape[1]))
         else:
             reshaped_isometries.append(isometries[i + 1])
 
@@ -33,8 +38,7 @@ def decode_embedding(isometries, last_embedding_state):
                          iso_stack, axes=((0), (-1))).reshape(-1)
 
 
-
-def calculate_exact_unitary(couplings, fields, time_interval=None):
+def exact_unitary(couplings, fields, time_interval=None):
     """ Return exact hamiltonian and evolution operator
         ==============================================================
         | Test function |
@@ -45,19 +49,19 @@ def calculate_exact_unitary(couplings, fields, time_interval=None):
         return jnp.kron(oper1, oper2)
 
     n = fields.shape[0]
-    hamiltonian = sum([sum([reduce(operator_product,
-                    jnp.array(i * [pauli[0]] + 2 * [pauli[k + 1]] + \
-                    (n - i - 2) * [pauli[0]])) for i in range(
-                     n - 1)]) for k in range(3)]) + \
-                  sum([sum([reduce(operator_product,
-                    jnp.array(i * [pauli[0]] + [pauli[k + 1]] + \
-                    (n - i - 1) * [pauli[0]])) for i in range(
-                     n - 1)]) for k in range(3)])
+    hamiltonian = sum([sum([reduce(lambda x, y: jnp.kron(x, y), oper_list)
+                       for oper_list in [couplings[i, k] * jnp.array(
+                       i * [pauli[0]] +  2 * [pauli[k + 1]] + \
+                       (n - i - 2) * [pauli[0]]) for i in range(n - 1)]])
+                       for k in range(3)]) + \
+                  sum([sum([reduce(lambda x, y: jnp.kron(x, y), oper_list)
+                       for oper_list in [fields[i, k] * jnp.array(
+                       i * [pauli[0]] + [pauli[k + 1]] + \
+                       (n - i - 1) * [pauli[0]]) for i in range(n)]])
+                   for k in range(3)])
+
     if time_interval != None:
         return expm(-1j * time_interval * hamiltonian)
     else:
         return hamiltonian
-
-
-
 
