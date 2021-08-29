@@ -9,14 +9,15 @@ pauli = jnp.array([jnp.array([[1., 0.], [0., 1.]], jnp.complex64),
                 jnp.array([[1., 0.], [0., -1.]], jnp.complex64)])
 
 
-def decode_embedding(isometries, last_embedding_state):
+def decode_embedding(input_isometries, last_embedding_state):
     """ Return decoded system-environment state from embedding
         Args:
             isometries: isometric matrices from truncation procedure
             last_embedding_state: resulting embedding vector
-
         Returns: system-environment statevector
     """
+
+    isometries = input_isometries.conj()
     reshaped_isometries = [isometries[0]]
     for i in range(len(isometries) - 1):
         if isometries[i].shape[1] != isometries[i + 1].shape[0]:
@@ -65,3 +66,14 @@ def exact_unitary(couplings, fields, time_interval=None):
     else:
         return hamiltonian
 
+
+def exact_dynamics():
+    """ Calculate exact dynamics of the whole system
+        ==============================================================
+        | Test function |
+        Do not use for large dimentions to prevent RAM overconsumption
+        ==============================================================
+    """
+
+
+    return 
