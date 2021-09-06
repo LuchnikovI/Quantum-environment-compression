@@ -67,13 +67,16 @@ def exact_unitary(couplings, fields, time_interval=None):
         return hamiltonian
 
 
-def exact_dynamics():
+def exact_dynamics(hamiltonian, initial_state, tau, time_steps):
     """ Calculate exact dynamics of the whole system
         ==============================================================
         | Test function |
         Do not use for large dimentions to prevent RAM overconsumption
         ==============================================================
     """
+    times = jnp.arange(time_steps) * tau
+    conseq_states = []
+    for time in times:
+        conseq_states.append(expm(-1j * time * hamiltonian) @ initial_state)
+    return conseq_states
 
-
-    return 

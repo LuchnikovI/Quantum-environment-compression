@@ -48,7 +48,7 @@ class  Floquet_dynamics:
         self.initial_state = self.init_state()
 
         #Ganerate evolution MPO
-        self.layers = self._gen_layer()
+        self.layer = self.gen_layer()
 
 
     def init_state(self, sys_state=None, env_state=None):
@@ -62,13 +62,13 @@ class  Floquet_dynamics:
             env_state = jnp.eye(1, 2**self.env_size, dtype=jnp.complex64)
         else:
             pass
-        self.initial_state = jnp.tensordot(
+        return jnp.tensordot(
                     sys_state, #system state
                     env_state, #environment state
                     axes=0).reshape((self.env_size + 1) * (2, ))
 
 
-    def _gen_layer(self):
+    def gen_layer(self):
         """ Generate MPO layer """
 
         operator_layer = jnp.tensordot(self.couplings,
@@ -80,7 +80,7 @@ class  Floquet_dynamics:
         operator_layer = jnp.array(list(map(lambda operator: expm(
                          -1j * self.tau * operator),
                          operator_layer))) # matrix exponential 
-        self.layer = operator_layer.reshape(self.env_size, 2, 2, 2, 2)
+        return operator_layer.reshape(self.env_size, 2, 2, 2, 2)
 
     @staticmethod
     def _apply_gate(state, argument, size):
@@ -131,8 +131,8 @@ class  Floquet_dynamics:
 
 
     def state_evolution(self):
-        assert self.initial_state != None
-        assert self.layer != None
+        assert self.initial_state != None, 'Initial state is None'
+        assert self.layer != None, 'Operator layer is None '
 
         in_state = self.initial_state
         bloch_vectors = [[self._bloch_projection(
