@@ -85,6 +85,7 @@ def choi(gates,
          use_control=False,
          dtype=jnp.complex64,
          swap_end_spins=False):
+
     """This function returns Choi matrices describing quantum channels with
     input in 0-th position and output in any position for all time steps.
 
