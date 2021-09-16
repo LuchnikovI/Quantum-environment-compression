@@ -16,19 +16,22 @@ class  Floquet_dynamics:
 
     def __init__(self, couplings, local_fields, env_size, tau, number_of_steps):
         #Pauli matrices
-        self.pauli = jnp.array([jnp.array([[1., 0.], [0., 1.]], jnp.complex64),
-                      jnp.array([[0., 1.], [1., 0.]], jnp.complex64),
-                      jnp.array([[0., -1j], [1j, 0.]], jnp.complex64),
-                      jnp.array([[1., 0.], [0., -1.]], jnp.complex64)])
+        self.identity = jnp.array([[1., 0.], [0., 1.]],
+                                        jnp.complex64)
+        self.pauli = jnp.array([jnp.array([[0., 1.], [1., 0.]],
+                                                jnp.complex64),
+                                jnp.array([[0., -1j], [1j, 0.]],
+                                                jnp.complex64),
+                                jnp.array([[1., 0.], [0., -1.]],
+                                                jnp.complex64)])
+        self.pauli_prods = jnp.array([jnp.kron(oper, oper)
+                             for oper in self.pauli])
+        self.id_pauli = jnp.array([jnp.kron(self.identity, oper)
+                             for oper in self.pauli])
+        self.pauli_id = jnp.array([jnp.kron(oper, self.identity)
+                             for oper in self.pauli])
 
-        self.pauli_prods = jnp.array([jnp.kron(self.pauli[i + 1],
-                           self.pauli[i + 1]) for i in range(3)])
-        self.id_pauli = jnp.array([jnp.kron(self.pauli[0],
-                           self.pauli[i + 1]) for i in range(3)])
-        self.pauli_id = jnp.array([jnp.kron(self.pauli[i + 1],
-                           self.pauli[0]) for i in range(3)])
-
-        lmbd, u = jnp.linalg.eigh(self.pauli[1:] + self.pauli[0])
+        lmbd, u = jnp.linalg.eigh(self.pauli + self.identity)
         u = u.transpose((0, 2, 1)).conj()
         self.sq_sigma = jnp.sqrt(lmbd)[..., jnp.newaxis] * u
 
@@ -48,7 +51,7 @@ class  Floquet_dynamics:
         self.initial_state = self.init_state()
 
         #Ganerate evolution MPO
-        self.layer = self.gen_layer()
+        self.layer = self.construct_checkerboard()
 
 
     def init_state(self, sys_state=None, env_state=None):
@@ -62,25 +65,29 @@ class  Floquet_dynamics:
             env_state = jnp.eye(1, 2**self.env_size, dtype=jnp.complex64)
         else:
             pass
-        return jnp.tensordot(
-                    sys_state, #system state
+        return jnp.tensordot(sys_state, #system state
                     env_state, #environment state
                     axes=0).reshape((self.env_size + 1) * (2, ))
 
 
-    def gen_layer(self):
-        """ Generate MPO layer """
+    def construct_checkerboard(self):
+        """ Construct checkerboard gate layer from
+            hamiltonian parameters.
+        """
+        mul = jnp.array([2.] + (self.local_fields.shape[0] - 2) * [1.] + [2.])
+        # correct fields to checkerboard construction
+        fields_corr = jnp.multiply(mul, self.local_fields.T).T
+        checker_ham = jnp.tensordot(self.couplings, self.pauli_prods,
+                                    axes=((1), (0))) + \
+                      jnp.tensordot(fields_corr[:-1, :] / 2, self.pauli_id,
+                                    axes=((1), (0))) + \
+                    jnp.tensordot(fields_corr[1:, :] / 2, self.id_pauli,
+                                    axes=((1), (0)))
+        # matrix exponential 
+        gate_layer = jnp.array(list(map(lambda operator: expm(
+                     -1j * self.tau * operator), checker_ham)))
+        return gate_layer.reshape(self.env_size, 2, 2, 2, 2)
 
-        operator_layer = jnp.tensordot(self.couplings,
-                        self.pauli_prods, axes=((1), (0))) +\
-                        jnp.tensordot(self.local_fields[:-1, :]/2,
-                        self.pauli_id, axes=((1), (0))) +\
-                        jnp.tensordot(self.local_fields[1:, :]/2,
-                        self.id_pauli, axes=((1), (0)))
-        operator_layer = jnp.array(list(map(lambda operator: expm(
-                         -1j * self.tau * operator),
-                         operator_layer))) # matrix exponential 
-        return operator_layer.reshape(self.env_size, 2, 2, 2, 2)
 
     @staticmethod
     def _apply_gate(state, argument, size):
@@ -143,7 +150,4 @@ class  Floquet_dynamics:
             bloch_vectors.append([self._bloch_projection(
                 in_state, state_ax) for state_ax in range(self.number_of_sites)])
         return jnp.array(bloch_vectors)
-
-
-    #TODO Implement Statevector <-> MPS function
 

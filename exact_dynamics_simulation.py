@@ -2,10 +2,59 @@ import jax.numpy as jnp
 from jax import lax, jit, vmap
 from functools import partial
 from jax.scipy.special import xlogy
+from jax.scipy.linalg import expm
+
+
+def construct_checkerboard(couplings, fields, tau):
+    """
+    Construct checkerboard gate layer from
+    hamiltonian parameters.
+
+    Args:
+    couplings in from:
+    [[Jx, Jy, Jz]_(i,i+1)] type: jnp.array
+
+    local fields in from:
+    [[hx, hy, hz]_(i)] type: jnp.array
+
+    Returns:
+    checkerboard gate layer:
+    [U(0), U(1), U(2), ...]
+    """
+
+    # def pauli matrices
+    identity = jnp.array([[1., 0.],[0., 1.]], jnp.complex64)
+    pauli = [jnp.array([[0., 1.], [1., 0.]], jnp.complex64),
+        jnp.array([[0., -1j], [1j, 0.]], jnp.complex64),
+        jnp.array([[1., 0.], [0., -1.]], jnp.complex64)]
+    # pauli products 
+    pauli_prods = jnp.array([jnp.kron(oper, oper)
+                         for oper in pauli])
+    id_pauli = jnp.array([jnp.kron(identity, oper)
+                         for oper in pauli])
+    pauli_id = jnp.array([jnp.kron(oper, identity)
+                         for oper in pauli])
+
+    mul = jnp.array([2.] + (fields.shape[0] - 2) * [1.] + [2.])
+    # correct fields to checkerboard construction
+    fields_corr = jnp.multiply(mul, fields.T).T
+    checker_ham = jnp.tensordot(couplings, pauli_prods,
+                            axes=((1), (0))) + \
+              jnp.tensordot(fields_corr[:-1, :]/2, pauli_id,
+                            axes=((1), (0))) + \
+              jnp.tensordot(fields_corr[1:, :]/2, id_pauli,
+                            axes=((1), (0)))
+    gate_layer = jnp.array(list(map(lambda operator: expm(
+                 -1j * tau * operator), checker_ham)))
+    # matrix exponential 
+    return gate_layer
 
 
 @vmap
 def _mut_inf(rho):
+    """
+    Calcualte mutual information
+    """
     lmbd12 = jnp.linalg.eigvalsh(rho)
     lmbd12 = jnp.maximum(lmbd12, 0)
     h12 = -xlogy(lmbd12, lmbd12).sum()
@@ -105,6 +154,9 @@ def choi(gates,
 
 
 def dynamics(in_state, choi):
+    """
+    Calculate dynamics of the system
+    """
     circ_shape = choi.shape[:2]
     choi = choi.reshape((*circ_shape, 2, 2, 2, 2))
     rhos = 2 * jnp.einsum('qpkimj,k,m->qpij', choi, in_state, in_state.conj())
