@@ -188,15 +188,14 @@ def dynamics_with_embedding(embedding_matrices,
         sys_rhos.append(sys_rho)
         in_state = jnp.tensordot(transition_matrix, in_state, axes=1)
         in_state = in_state / jnp.linalg.norm(in_state)
-        embedding_states.append(in_state)
+        # embedding_states.append(in_state)
 
         if use_control:
             in_state = in_state.reshape((-1, 2))
             in_state = jnp.tensordot(in_state, control_seq[i], axes=[[1], [1]])
             in_state = in_state.reshape((-1,))
-            embedding_states.append(in_state)
-
-    return jnp.array(sys_rhos), embedding_states
+            # embedding_states.append(in_state)
+    return jnp.array(sys_rhos), in_state
 
 
 # does not work for the moment
