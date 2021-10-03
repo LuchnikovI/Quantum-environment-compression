@@ -4,7 +4,7 @@ from jax.scipy.linalg import expm
 from jax import jit
 
 
-def state_from_embedding(emb_state, isometries):
+def state_from_embedding(emb_state, isometries, spin_number):
     """ Returns the decoded system-environment state from the embedding
         Args:
             isometries: isometric matrices from truncation procedure
@@ -17,9 +17,7 @@ def state_from_embedding(emb_state, isometries):
 
     initial_state = emb_state.reshape(-1, 2)
     decoded_vec = reduce(convolution, isometries[::-1], initial_state).reshape(-1)
-    subsys_number = int(jnp.log(len(decoded_vec)) / jnp.log(2.))
-    decoded_vec = decoded_vec.reshape(subsys_number * [2]).T.reshape(-1)
-    return decoded_vec
+    return decoded_vec.reshape(spin_number * [2]).T.reshape(-1)
 
 
 def energy_from_embedding(emb_state, isometries, coluplings, fields):
