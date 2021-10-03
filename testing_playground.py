@@ -63,7 +63,7 @@ def measure(density_matrix):
             (density_matrix @ pauli[2]).trace()]
 
 
-def trace_environment(statevector):
+def trace_environment(statevector, spins_number):
     """ Tracing the exct dynamics
         ==============================================================
                         | Test function |
@@ -71,7 +71,6 @@ def trace_environment(statevector):
         ==============================================================
     """
     meas_res = []
-    spins_number = int(jnp.log(statevector.shape[0]) / jnp.log(2.))
     spin_range = jnp.arange(spins_number)
     traces = [tuple(jnp.delete(spin_range, index)) for index in spin_range]
     resh_vector = statevector.reshape(spins_number * [2])
