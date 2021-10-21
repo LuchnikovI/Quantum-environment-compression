@@ -4,6 +4,11 @@ from jax.scipy.linalg import expm
 from jax import jit
 
 
+identity = jnp.array([[1., 0.], [0., 1.]], jnp.complex64)
+paulix = jnp.array([[0., 1.], [1., 0.]], jnp.complex64)
+pauliy = jnp.array([[0., -1j], [1j, 0.]], jnp.complex64)
+pauliz = jnp.array([[1., 0.], [0., -1.]], jnp.complex64
+
 def state_from_embedding(emb_state, isometries, spin_number):
     """ Returns the decoded system-environment state from the embedding
         Args:
