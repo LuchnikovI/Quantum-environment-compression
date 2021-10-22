@@ -46,8 +46,6 @@ def hamiltonian_to_mpo(couplings, fields):
     return [left_vec] + mid_blocks + [right_vec]
 
 
-
-
 def hamiltonian_renormalization(isometries, mpo):
     """ Hamiltonian operator in embedding space """
     @jit
@@ -59,25 +57,28 @@ def hamiltonian_renormalization(isometries, mpo):
         return stack
 
     def net_contract(state, isometry, mpo):
-        process_tensor, i = state #unpacking 
+        process_tensor, i = state # unpacking 
         iso_dim, proc_shape = isometry.shape[0], process_tensor.shape
-        mpo_num = int(jnp.log2(iso_dim / proc_shape[-1])) #number of additional spins
-        process_tensor = reduce(mpo_contract, mpo[i:i + mpo_num], process_tensor) #contract mpo
-        process_tensor = jnp.tensordot(process_tensor, isometry, axes=((1), (0)))#right isometry 
-        process_tensor = jnp.tensordot(process_tensor, isometry.conj(), axes=((1), (0))) #left isometry 
+        mpo_num = int(jnp.log2(iso_dim / proc_shape[-1]))
+        # number of additional spins
+        process_tensor = reduce(mpo_contract, mpo[i:i + mpo_num], process_tensor)
+        # contract mpo
+        process_tensor = jnp.tensordot(process_tensor, isometry, axes=((1), (0)))
+        # right isometry 
+        process_tensor = jnp.tensordot(process_tensor, isometry.conj(), axes=((1), (0)))
+        #left isometry 
         i += mpo_num
         return (process_tensor, i)
 
-
-    renorm_ham = reduce(lambda state, iso: net_contract(state, iso, mpo[1:-1]),
-                                                      isometries, (mpo[0], 0))
+    renorm_ham = reduce(lambda state, iso: net_contract(
+                 state, iso, mpo[1:-1]), isometries, (mpo[0], 0))
     return jnp.tensordot(renorm_ham[0], mpo[-1], axes=((0), (0)))
 
 
 def energy(renorm_ham, emb_state):
     """ Calculate energy from embedding state """
     emb_state = emb_state.reshape(-1, 2)
-    energy = jnp.tensordot(renham, emb_state, axes=((0, 2), (0, 1)))
+    energy = jnp.tensordot(renorm_ham, emb_state, axes=((0, 2), (0, 1)))
     return jnp.tensordot(energy, emb_state.conj(), axes=((0, 1), (0, 1)))
 
 
